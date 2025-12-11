@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+venv/
+.venv/
+
+# FastAPI / Uvicorn
+*.log
+
+# Jupyter / Data
+.ipynb_checkpoints/
+*.xlsx
+*.parquet
+
+# Environment files
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Cache
+.cache/
+
+# Dataset folder (keep CSVs)
+/data/
+!data/*.csv
+!data/README.md
