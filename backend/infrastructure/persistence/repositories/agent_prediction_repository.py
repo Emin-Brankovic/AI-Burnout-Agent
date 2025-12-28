@@ -2,7 +2,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from backend.domain.repositories.agent_prediction_repository import AgentPredictionRepositoryInterface
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
-from backend.infrastructure.persistence.models import AgentPrediction
+from backend.infrastructure.persistence.database import AgentPrediction
 from backend.infrastructure.persistence.data_mappers import (
     agent_prediction_model_to_entity,
     agent_prediction_entity_to_model

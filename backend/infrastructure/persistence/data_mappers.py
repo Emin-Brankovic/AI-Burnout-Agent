@@ -2,7 +2,7 @@ from backend.domain.entities.employee import EmployeeEntity
 from backend.domain.entities.department import DepartmentEntity
 from backend.domain.entities.daily_log import DailyLogEntity
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
-from backend.infrastructure.persistence.models import Employee, Department, DailyLog, AgentPrediction
+from backend.infrastructure.persistence.database import Employee, Department, DailyLog, AgentPrediction
 
 
 # Department Mappers

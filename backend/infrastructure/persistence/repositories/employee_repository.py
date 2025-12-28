@@ -2,7 +2,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from backend.domain.repositories.employee_repository import EmployeeRepositoryInterface
 from backend.domain.entities.employee import EmployeeEntity
-from backend.infrastructure.persistence.models import Employee
+from backend.infrastructure.persistence.database import Employee
 from backend.infrastructure.persistence.data_mappers import (
     employee_model_to_entity,
     employee_entity_to_model

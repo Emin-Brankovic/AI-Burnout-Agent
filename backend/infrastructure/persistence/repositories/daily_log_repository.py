@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from backend.domain.repositories.daily_log_repository import DailyLogRepositoryInterface
 from backend.domain.entities.daily_log import DailyLogEntity
-from backend.infrastructure.persistence.models import DailyLog
+from backend.infrastructure.persistence.database import DailyLog
 from backend.infrastructure.persistence.data_mappers import (
     daily_log_model_to_entity,
     daily_log_entity_to_model
