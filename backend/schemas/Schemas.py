@@ -11,6 +11,23 @@ class BurnoutFeatures(BaseModel):
     mood_score: float = Field(..., ge=0, le=10, description="Mood from 0–10")
     timestamp: str = Field(..., description="Timestamp in ISO format")
 
+class EmployeeData(BaseModel):
+    Employee_Id: int
+    Work_Hours_Per_Day: float
+    Sleep_Hours_Per_Night: float
+    Personal_Time_Hours_Per_Day: float
+    Motivation_Level: int
+    Work_Stress_Level: int
+    Workload_Intensity: int
+    Overtime_Hours_Today: float
+
+
+class PredictionResult(BaseModel):
+    probability: float
+    risk_level: str
+    message: str
+    #recommendation: str
+
 class BurnoutPredictionResponse(BaseModel):
     Prediction: str
     Reliability: dict[str, str]
