@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from infrastructure.persistence.database import get_db
-from application.services.daily_log_service import DailyLogService
-from presentation.schemas.daily_log_schemas import (
+from backend.infrastructure.persistence.database import get_db
+from backend.application.services.daily_log_service import DailyLogService
+from backend.presentation.schemas.daily_log_schemas import (
     DailyLogCreateRequest,
     DailyLogUpdateRequest,
     DailyLogResponse

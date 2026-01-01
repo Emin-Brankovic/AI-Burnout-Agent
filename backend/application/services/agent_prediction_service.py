@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.services.base_crud_service import BaseCRUDService
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
-from backend.domain.repositories.agent_prediction_repository import AgentPredictionRepositoryInterface
+from backend.domain.repositories_interfaces.agent_prediction_repository_interface import AgentPredictionRepositoryInterface
 from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
 
 

@@ -1,9 +1,17 @@
+from datetime import datetime
+import traceback
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-
+from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
+from backend.application.services.prediction_service import get_prediction_service
+from backend.domain.entities.daily_log import DailyLogEntity
 from backend.infrastructure.persistence.database import get_db
 from backend.application.services.agent_prediction_service import AgentPredictionService
+from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
+from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
+from backend.presentation.schemas import DailyLogCreateRequest
 from backend.presentation.schemas.agent_prediction_schemas import (
     AgentPredictionCreateRequest,
     AgentPredictionUpdateRequest,
@@ -13,6 +21,86 @@ from backend.presentation.schemas.agent_prediction_schemas import (
 router = APIRouter(prefix="/predictions", tags=["Agent Predictions"])
 
 
+@router.post("/predict", response_model=dict, status_code=status.HTTP_200_OK)
+def predict_burnout(
+    request: DailyLogCreateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Predict burnout risk based on user input without saving daily log.
+
+    This endpoint allows direct prediction from user input data.
+    """
+    try:
+        # Create a temporary DailyLogEntity for prediction (not saved to DB)
+        temp_daily_log = DailyLogEntity(
+            id=None,  # Temporary, not persisted
+            employee_id=request.employee_id,
+            log_date=request.log_date or datetime.now(),
+            hours_worked=request.hours_worked,
+            hours_slept=request.hours_slept,
+            daily_personal_time=request.daily_personal_time,
+            motivation_level=request.motivation_level,
+            stress_level=request.stress_level,
+            workload_intensity=request.workload_intensity,
+            overtime_hours_today=request.overtime_hours_today
+        )
+
+
+        # Initialize prediction service
+        prediction_repo = AgentPredictionRepository(db)
+        daily_log_repository = DailyLogRepository(db)
+        employee_repository = EmployeeRepository(db)
+        prediction_service = get_prediction_service(
+            prediction_repository=prediction_repo,
+            daily_log_repository=daily_log_repository,
+            employee_repository=employee_repository
+        )
+
+        # Make prediction (save_to_db=False to avoid storing prediction)
+        prediction_entity = prediction_service.predict_for_daily_log(
+            daily_log=temp_daily_log,
+            save_to_db=True
+        )
+
+        db.commit()
+
+        # Return prediction results
+        return {
+            "employee_id": request.employee_id,
+            "input_data": {
+                "hours_worked": request.hours_worked,
+                "hours_slept": request.hours_slept,
+                "daily_personal_time": request.daily_personal_time,
+                "motivation_level": request.motivation_level,
+                "stress_level": request.stress_level,
+                "workload_intensity": request.workload_intensity,
+                "overtime_hours_today": request.overtime_hours_today
+            },
+            "prediction": {
+                "burnout_rate": prediction_entity.prediction_value,
+                "risk_level": prediction_entity.risk_level,
+                "confidence_score": prediction_entity.confidence_score,
+                "confidence_percentage": prediction_entity.get_confidence_percentage(),
+                "message": prediction_entity.message
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Model not available: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Prediction failed",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }
+        )
 @router.post("/", response_model=AgentPredictionResponse, status_code=status.HTTP_201_CREATED)
 def create_prediction(
         request: AgentPredictionCreateRequest,
@@ -37,7 +125,7 @@ def create_prediction(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=traceback.format_exc())
 
 
 @router.get("/", response_model=List[AgentPredictionResponse])

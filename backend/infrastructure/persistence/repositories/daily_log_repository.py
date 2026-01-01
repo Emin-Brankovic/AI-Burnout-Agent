@@ -1,7 +1,11 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from backend.domain.repositories.daily_log_repository import DailyLogRepositoryInterface
+
+from backend.domain.enums.enums import DailyLogStatus
+from backend.domain.repositories_interfaces.daily_log_repository_interface import DailyLogRepositoryInterface
 from backend.domain.entities.daily_log import DailyLogEntity
 from backend.infrastructure.persistence.database import DailyLog
 from backend.infrastructure.persistence.data_mappers import (
@@ -104,3 +108,73 @@ class DailyLogRepository(DailyLogRepositoryInterface):
                 del self._identity_map[log_id]
             return True
         return False
+
+    def get_all_by_status(
+            self,
+            status: DailyLogStatus,
+            limit: int = 100
+    ) -> List[DailyLogEntity]:
+        """Get all logs with specific status."""
+        models = (
+            self.session.query(DailyLog)
+            .filter(DailyLog.status == status.value)
+            .order_by(DailyLog.log_date.desc())
+            .limit(limit)
+            .all()
+        )
+        return [daily_log_model_to_entity(model) for model in models]
+
+    def get_pending_for_employee(
+            self,
+            employee_id: int,
+            days: int = 7
+    ) -> List[DailyLogEntity]:
+        """Get pending logs for employee within timeframe."""
+        cutoff_date = datetime.utcnow() - timedelta(days=days)
+
+        models = (
+            self.session.query(DailyLog)
+            .filter(
+                DailyLog.employee_id == employee_id,
+                DailyLog.status == DailyLogStatus.PENDING.value,
+                DailyLog.log_date >= cutoff_date
+            )
+            .order_by(DailyLog.log_date.desc())
+            .all()
+        )
+        return [daily_log_model_to_entity(model) for model in models]
+
+    def count_by_status(self, status: DailyLogStatus) -> int:
+        """Count logs with specific status."""
+        return (
+            self.session.query(func.count(DailyLog.id))
+            .filter(DailyLog.status == status.value)
+            .scalar()
+        )
+
+    def get_next_pending(self) -> Optional[DailyLogEntity]:
+        """Get next pending log ordered by date (FIFO)."""
+        model = (
+            self.session.query(DailyLog)
+            .filter(DailyLog.status == DailyLogStatus.PENDING.value)
+            .order_by(DailyLog.log_date.asc())
+            .first()
+        )
+
+        if model:
+            return daily_log_model_to_entity(model)
+        return None
+
+    def get_queue_statistics(self) -> dict:
+        """Get statistics for all statuses."""
+        total = self.session.query(func.count(DailyLog.id)).scalar()
+
+        return {
+            "total_logs": total,
+            "pending": self.count_by_status(DailyLogStatus.PENDING),
+            "processing": self.count_by_status(DailyLogStatus.PROCESSING),
+            "analyzed": self.count_by_status(DailyLogStatus.ANALYZED),
+            "pending_review": self.count_by_status(DailyLogStatus.PENDING_REVIEW),
+            "reviewed": self.count_by_status(DailyLogStatus.REVIEWED),
+            "failed": self.count_by_status(DailyLogStatus.FAILED)
+        }

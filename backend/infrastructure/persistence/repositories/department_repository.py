@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from backend.domain.repositories.department_repository import DepartmentRepositoryInterface
+from backend.domain.repositories_interfaces.department_repository_interface import DepartmentRepositoryInterface
 from backend.domain.entities.department import DepartmentEntity
 from backend.infrastructure.persistence.database import Department
 from backend.infrastructure.persistence.data_mappers import (

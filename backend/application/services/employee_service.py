@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.services.base_crud_service import BaseCRUDService, BaseSearchObject
 from backend.domain.entities.employee import EmployeeEntity
-from backend.domain.repositories.employee_repository import EmployeeRepositoryInterface
+from backend.domain.repositories_interfaces.employee_repository_interface import EmployeeRepositoryInterface
 from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
 
 

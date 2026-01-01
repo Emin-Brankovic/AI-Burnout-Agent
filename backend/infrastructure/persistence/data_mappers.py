@@ -2,6 +2,7 @@ from backend.domain.entities.employee import EmployeeEntity
 from backend.domain.entities.department import DepartmentEntity
 from backend.domain.entities.daily_log import DailyLogEntity
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
+from backend.domain.enums.enums import DailyLogStatus
 from backend.infrastructure.persistence.database import Employee, Department, DailyLog, AgentPrediction
 
 
@@ -53,7 +54,15 @@ def employee_entity_to_model(entity: EmployeeEntity) -> Employee:
 
 # DailyLog Mappers
 def daily_log_model_to_entity(model: DailyLog) -> DailyLogEntity:
-    """Convert SQLAlchemy DailyLog model to domain entity."""
+    """
+    Convert SQLAlchemy DailyLog model to domain entity.
+
+    Args:
+        model: DailyLog ORM model from database
+
+    Returns:
+        DailyLogEntity: Pure domain entity
+    """
     return DailyLogEntity(
         id=model.id,
         employee_id=model.employee_id,
@@ -64,12 +73,23 @@ def daily_log_model_to_entity(model: DailyLog) -> DailyLogEntity:
         motivation_level=model.motivation_level,
         stress_level=model.stress_level,
         workload_intensity=model.workload_intensity,
-        overtime_hours_today=model.overtime_hours_today
+        overtime_hours_today=model.overtime_hours_today,
+        status=DailyLogStatus(model.status) if model.status else DailyLogStatus.PENDING,
+        processed_at=model.processed_at,
+        reviewed_at=model.reviewed_at
     )
 
 
 def daily_log_entity_to_model(entity: DailyLogEntity) -> DailyLog:
-    """Convert domain entity to SQLAlchemy DailyLog model."""
+    """
+    Convert domain entity to SQLAlchemy DailyLog model.
+
+    Args:
+        entity: DailyLogEntity from domain layer
+
+    Returns:
+        DailyLog: SQLAlchemy ORM model ready for persistence
+    """
     return DailyLog(
         id=entity.id,
         employee_id=entity.employee_id,
@@ -80,7 +100,10 @@ def daily_log_entity_to_model(entity: DailyLogEntity) -> DailyLog:
         motivation_level=entity.motivation_level,
         stress_level=entity.stress_level,
         workload_intensity=entity.workload_intensity,
-        overtime_hours_today=entity.overtime_hours_today
+        overtime_hours_today=entity.overtime_hours_today,
+        status=entity.status.value,  # Convert enum to string
+        processed_at=entity.processed_at,
+        reviewed_at=entity.reviewed_at
     )
 
 

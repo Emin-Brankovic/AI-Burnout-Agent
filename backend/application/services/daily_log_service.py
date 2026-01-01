@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.services.base_crud_service import BaseCRUDService
 from backend.domain.entities.daily_log import DailyLogEntity
-from backend.domain.repositories.daily_log_repository import DailyLogRepositoryInterface
+from backend.domain.repositories_interfaces.daily_log_repository_interface import DailyLogRepositoryInterface
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 
 

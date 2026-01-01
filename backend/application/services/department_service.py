@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.services.base_crud_service import BaseCRUDService
 from backend.domain.entities.department import DepartmentEntity
-from backend.domain.repositories.department_repository import DepartmentRepositoryInterface
+from backend.domain.repositories_interfaces.department_repository_interface import DepartmentRepositoryInterface
 from backend.infrastructure.persistence.repositories.department_repository import DepartmentRepository
 from backend.presentation.schemas.department_schemas import (
     DepartmentCreateRequest,

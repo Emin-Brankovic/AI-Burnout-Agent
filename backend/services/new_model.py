@@ -245,7 +245,7 @@ def predict_burnout(employee_input: EmployeeData):
     result = PredictionResult(
         probability=round(predicted_burnout_rate * 100, 2),
         risk_level=risk_level,
-        message=message
+        messagde=message
     )
 
     return result

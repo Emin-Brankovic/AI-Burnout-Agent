@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+from backend.domain.enums.enums import DailyLogStatus
+
 
 @dataclass
 class DailyLogEntity:
@@ -18,6 +20,9 @@ class DailyLogEntity:
     workload_intensity: Optional[int] = None
     overtime_hours_today: Optional[float] = None
     id: Optional[int] = None
+    status: DailyLogStatus = DailyLogStatus.QUEUED
+    processed_at: Optional[datetime] = None
+    reviewed_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Validate entity after initialization."""

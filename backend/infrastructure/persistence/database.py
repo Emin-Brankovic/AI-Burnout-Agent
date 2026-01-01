@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from datetime import datetime
 from typing import List, Optional
+from backend.domain.enums.enums import DailyLogStatus
 
 # Get absolute path to backend directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # Goes up 3 levels to backend/
@@ -53,8 +54,11 @@ class Employee(Base):
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
     email = Column(String(100), nullable=False, unique=True)
+    phone = Column(String(20), nullable=True)
     department_id = Column(Integer, ForeignKey('departments.id'), nullable=True)
+    job_title = Column(String(100), nullable=True)
     hire_date = Column(DateTime, default=datetime.utcnow)
+    salary = Column(Float, nullable=True)
 
     department = relationship("Department", back_populates="employees")
     daily_logs = relationship("DailyLog", back_populates="employee")
@@ -73,6 +77,9 @@ class DailyLog(Base):
     stress_level = Column(Integer, nullable=True)
     workload_intensity = Column(Integer, nullable=True)
     overtime_hours_today = Column(Float, nullable=True)
+    status = Column(String(50), nullable=False, default=DailyLogStatus.QUEUED)
+    processed_at=Column(DateTime, nullable=False)
+    reviewed_at = Column(DateTime, nullable=True)
 
     employee = relationship("Employee", back_populates="daily_logs")
     agent_predictions = relationship("AgentPrediction", back_populates="daily_log")
@@ -112,3 +119,43 @@ def init_db():
 
     print(f"✅ Database initialized at: {DATABASE_PATH}")
     print(f"   Created tables: {list(Base.metadata.tables.keys())}")
+
+def check_database_exists() -> bool:
+    """
+    Check if database exists and has data.
+
+    Returns:
+        bool: True if database has data, False otherwise
+    """
+    try:
+        # Check if database file exists
+        if not DATABASE_PATH.exists():
+            print("   📂 Database file does not exist")
+            return False
+
+        # Check if tables exist
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+
+        if not tables:
+            print("   📂 No tables found in database")
+            return False
+
+        # Check if there's data in departments table
+        db = SessionLocal()
+        try:
+            result = db.execute(text("SELECT COUNT(*) FROM departments")).scalar()
+            has_data = result > 0
+
+            if has_data:
+                print(f"   ✅ Database exists with {result} departments")
+            else:
+                print("   📂 Database exists but is empty")
+
+            return has_data
+        finally:
+            db.close()
+
+    except Exception as e:
+        print(f"   ⚠️ Database check error: {e}")
+        return False
