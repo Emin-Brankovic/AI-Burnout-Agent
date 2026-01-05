@@ -22,7 +22,6 @@ class DailyLogEntity:
     id: Optional[int] = None
     status: DailyLogStatus = DailyLogStatus.QUEUED
     processed_at: Optional[datetime] = None
-    reviewed_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Validate entity after initialization."""
@@ -57,6 +56,22 @@ class DailyLogEntity:
 
     def calculate_burnout_risk(self) -> str:
         """Calculate burnout risk level."""
+        risk_score = self._calculate_risk_score()
+
+        if risk_score >= 6:
+            return "HIGH"
+        elif risk_score >= 3:
+            return "MEDIUM"
+        else:
+            return "LOW"
+
+    def calculate_burnout_rate(self) -> float:
+        """Calculate burnout rate as a float (0.0 to 1.0)."""
+        risk_score = self._calculate_risk_score()
+        return round(risk_score / 8.0, 2)
+
+    def _calculate_risk_score(self) -> int:
+        """Internal helper to calculate risk score."""
         risk_score = 0
 
         if self.hours_slept and self.hours_slept < 6:
@@ -69,13 +84,8 @@ class DailyLogEntity:
             risk_score += 1
         if self.overtime_hours_today and self.overtime_hours_today > 2:
             risk_score += 1
-
-        if risk_score >= 6:
-            return "HIGH"
-        elif risk_score >= 3:
-            return "MEDIUM"
-        else:
-            return "LOW"
+            
+        return risk_score
 
     def __str__(self) -> str:
         return f"DailyLog: Employee {self.employee_id} on {self.log_date.date()}"

@@ -22,8 +22,11 @@ from backend.domain.repositories_interfaces.agent_prediction_repository_interfac
 from backend.domain.enums.enums import BurnoutRiskLevel, DailyLogStatus
 from backend.domain.repositories_interfaces.daily_log_repository_interface import DailyLogRepositoryInterface
 from backend.domain.repositories_interfaces.employee_repository_interface import EmployeeRepositoryInterface
-from backend.infrastructure.persistence.repositories import daily_log_repository
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
+from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
+from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
+from backend.application.services.queue_service import DailyLogQueueService
+from sqlalchemy.orm import Session
 
 
 class PredictionService:
@@ -44,6 +47,7 @@ class PredictionService:
             prediction_repository: AgentPredictionRepositoryInterface,
             daily_log_repository: DailyLogRepositoryInterface,
             employee_repository: EmployeeRepositoryInterface,
+            queue_service: Optional[DailyLogQueueService] = None,
             model_path: str = 'backend/ml_models/burnout_model.pkl'
     ):
         """
@@ -59,6 +63,7 @@ class PredictionService:
         self.model_path = Path(model_path)
         self.daily_log_repository = daily_log_repository
         self.employee_repository = employee_repository
+        self.queue_service = queue_service
 
         # Auto-load model if it exists
         if self.model_path.exists() and not predictor.is_model_loaded:
@@ -74,49 +79,12 @@ class PredictionService:
             daily_log: DailyLogEntity,
             save_to_db: bool = True
     ) -> AgentPredictionEntity:
-        """
-        Predict burnout for a single daily log and optionally save to database.
 
-        Args:
-            daily_log: DailyLogEntity to predict
-            save_to_db: Whether to save prediction to database (default: True)
-
-        Returns:
-            AgentPredictionEntity with prediction results
-
-        Raises:
-            RuntimeError: If model not loaded
-        """
         if not self.predictor.is_model_loaded:
             raise RuntimeError("Model not loaded. Cannot make predictions.")
 
-        print(f"🔮 Predicting burnout for Employee {daily_log.employee_id} (Log ID: {daily_log.id})")
-
         # Make prediction using BurnoutPredictor
         prediction_result: PredictionResult = self.predictor.predict(daily_log)
-
-        # save_temp_daily_log = DailyLogEntity(
-        #     id=None,
-        #     employee_id=request.employee_id,
-        #     log_date=request.log_date or datetime.now(),
-        #     hours_worked=request.hours_worked,
-        #     hours_slept=request.hours_slept,
-        #     daily_personal_time=request.daily_personal_time,
-        #     motivation_level=request.motivation_level,
-        #     stress_level=request.stress_level,
-        #     workload_intensity=request.workload_intensity,
-        #     overtime_hours_today=request.overtime_hours_today,
-        #     status='pending',  # ✅ Add this
-        #     processed_at=datetime.now(),  # ✅ Add this (required by database)
-        #     reviewed_at=None  # ✅ Add this
-        # )
-
-        daily_log.status=DailyLogStatus.ANALYZED
-        daily_log.processed_at=datetime.now()
-        daily_log.reviewed_at = None
-
-          # Create instance with db session
-        self.daily_log_repository.add(daily_log)
 
         # Convert to domain entity
         prediction_entity = self._convert_result_to_entity(
@@ -168,26 +136,18 @@ class PredictionService:
             daily_log: DailyLogEntity,
             prediction_result: PredictionResult
     ) -> AgentPredictionEntity:
-        """
-        Convert PredictionResult to AgentPredictionEntity.
-
-        Args:
-            daily_log: Source daily log
-            prediction_result: Prediction result from BurnoutPredictor
-
-        Returns:
-            AgentPredictionEntity ready for persistence
-        """
+        # Get risk level enum and convert to string for prediction_type
+        risk_level_enum = BurnoutRiskLevel.from_burnout_rate(prediction_result.burnout_rate)
+        
         entity = AgentPredictionEntity(
             daily_log_id=daily_log.id,
-            prediction_type='BURNOUT_RISK',
-            prediction_value=str(prediction_result.burnout_rate),
-            confidence_score=prediction_result.confidence,
+            prediction_type=prediction_result.prediction_type,  # Use from result
+            prediction_value=str(round(prediction_result.burnout_rate, 4)),  # Store as string with more precision
+            confidence_score=prediction_result.confidence_score,  # Renamed field
             created_at=datetime.utcnow()
         )
 
-        # Add risk_level and message as attributes afterward
-        entity.risk_level = prediction_result.risk_level
+        # Message is not stored in DB but useful for processing
         entity.message = prediction_result.message
 
         return entity
@@ -235,21 +195,21 @@ class PredictionService:
         """
         return self.prediction_repository.get_all()
 
-    def get_predictions_by_risk_level(self, risk_level: str) -> List[AgentPredictionEntity]:
+    def get_predictions_by_type(self, prediction_type: str) -> List[AgentPredictionEntity]:
         """
-        Get all predictions with specific risk level.
+        Get all predictions with specific type.
 
         Args:
-            risk_level: Risk level (NORMAL, MEDIUM, HIGH, CRITICAL)
+            prediction_type: Prediction type (NORMAL, MEDIUM, HIGH, CRITICAL)
 
         Returns:
-            List of predictions with that risk level
+            List of predictions with that type
         """
         all_predictions = self.prediction_repository.get_all()
 
         return [
             p for p in all_predictions
-            if p.risk_level == risk_level
+            if p.prediction_type == prediction_type
         ]
 
     # ========== STATISTICS ==========
@@ -275,8 +235,8 @@ class PredictionService:
         total_burnout_rate = 0.0
 
         for prediction in all_predictions:
-            risk_level = prediction.risk_level or 'UNKNOWN'
-            risk_counts[risk_level] = risk_counts.get(risk_level, 0) + 1
+            prediction_type = prediction.prediction_type or 'UNKNOWN'
+            risk_counts[prediction_type] = risk_counts.get(prediction_type, 0) + 1
             total_burnout_rate += prediction.prediction_value or 0.0
 
         return {
@@ -291,30 +251,28 @@ class PredictionService:
 # Factory function for dependency injection
 # ============================================================================
 
-def get_prediction_service(
-        prediction_repository: AgentPredictionRepositoryInterface,
-        daily_log_repository: DailyLogRepositoryInterface,
-        employee_repository: EmployeeRepositoryInterface,
-        model_path: str = 'backend/ml_models/burnout_model.pkl'
 
-) -> PredictionService:
+def get_prediction_service(db: Session, model_path: str = 'backend/ml_models/burnout_model.pkl') -> PredictionService:
     """
-    Factory function for creating prediction service.
-
-    Args:
-        prediction_repository: Repository for storing predictions
-        model_path: Path to trained model
-
-    Returns:
-        PredictionService instance
+    Factory function for creating prediction service using a database session.
     """
-    predictor = BurnoutPredictor(daily_log_repository,employee_repository)
-
+    # 1. Repositories
+    prediction_repo = AgentPredictionRepository(db)
+    daily_log_repo = DailyLogRepository(db)
+    employee_repo = EmployeeRepository(db)
+    
+    # 2. Queue Service
+    queue_service = DailyLogQueueService(db)
+    
+    # 3. Predictor
+    predictor = BurnoutPredictor(daily_log_repo, employee_repo)
+    
+    # 4. Service
     return PredictionService(
         predictor=predictor,
-        prediction_repository=prediction_repository,
-        model_path=model_path,
-        daily_log_repository=daily_log_repository,
-        employee_repository=employee_repository
-
+        prediction_repository=prediction_repo,
+        daily_log_repository=daily_log_repo,
+        employee_repository=employee_repo,
+        queue_service=queue_service,
+        model_path=model_path
     )

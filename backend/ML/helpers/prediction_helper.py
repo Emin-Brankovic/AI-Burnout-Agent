@@ -88,6 +88,90 @@ class PredictionHelper:
 
         return pd.DataFrame(synthetic_data)
 
+    def _calculate_feature_completeness(self, entity: DailyLogEntity) -> float:
+        """
+        Calculate feature completeness score (0.0 to 1.0).
+        
+        Args:
+            entity: DailyLogEntity to evaluate
+            
+        Returns:
+            Completeness score where 1.0 = all features present
+        """
+        features = {
+            'hours_worked': entity.hours_worked,
+            'hours_slept': entity.hours_slept,
+            'daily_personal_time': entity.daily_personal_time,
+            'motivation_level': entity.motivation_level,
+            'stress_level': entity.stress_level,
+            'workload_intensity': entity.workload_intensity,
+            'overtime_hours_today': entity.overtime_hours_today
+        }
+        
+        present_count = sum(1 for value in features.values() if value is not None)
+        total_count = len(features)
+        
+        return present_count / total_count if total_count > 0 else 0.0
+
+    def _calculate_historical_consistency(self, historical: pd.DataFrame) -> float:
+        """
+        Calculate historical data consistency score (0.0 to 1.0).
+        Lower variance = higher consistency = higher confidence.
+        
+        Args:
+            historical: DataFrame with historical data
+            
+        Returns:
+            Consistency score where 1.0 = very consistent
+        """
+        if historical.empty or len(historical) < 2:
+            return 0.5  # Neutral score for insufficient data
+        
+        # Calculate coefficient of variation for key metrics
+        key_metrics = ['Work_Hours_Per_Day', 'Sleep_Hours_Per_Night', 
+                      'Work_Stress_Level', 'Motivation_Level']
+        
+        available_metrics = [m for m in key_metrics if m in historical.columns]
+        if not available_metrics:
+            return 0.5
+        
+        cv_scores = []
+        for metric in available_metrics:
+            values = historical[metric].dropna()
+            if len(values) > 1:
+                mean_val = values.mean()
+                std_val = values.std()
+                if mean_val != 0:
+                    cv = std_val / mean_val
+                    # Convert CV to consistency score (lower CV = higher consistency)
+                    # CV of 0 = perfect consistency (1.0), CV of 0.5+ = low consistency (0.0)
+                    consistency = max(0.0, 1.0 - (cv * 2))
+                    cv_scores.append(consistency)
+        
+        if not cv_scores:
+            return 0.5
+        
+        # Average consistency across all metrics
+        return sum(cv_scores) / len(cv_scores)
+
+    def _calculate_data_quality_confidence(self, historical_count: int, 
+                                          sequence_length: int,
+                                          has_department: bool) -> Tuple[str, float]:
+        """
+        Calculate base confidence based on data quality.
+        
+        Returns:
+            Tuple of (data_quality_label, confidence_score)
+        """
+        if historical_count >= sequence_length - 1:
+            return "excellent", 0.95
+        elif historical_count > sequence_length // 2:
+            return "good", 0.80 if has_department else 0.70
+        elif historical_count > 0:
+            return "fair", 0.65 if has_department else 0.55
+        else:
+            return "estimated_dept" if has_department else "estimated_global", 0.50 if has_department else 0.40
+
     def prepare_prediction_data(
         self,
         entity: DailyLogEntity,
@@ -95,6 +179,7 @@ class PredictionHelper:
     ) -> Tuple[pd.DataFrame, str, float]:
         """
         Prepare entity for prediction with intelligent fallback.
+        Enhanced confidence calculation considers multiple factors.
 
         Args:
             entity: DailyLogEntity to predict
@@ -112,6 +197,8 @@ class PredictionHelper:
         )
 
         historical_count = len(historical)
+        department_id = self.data_retriever.get_employee_department(entity.employee_id)
+        has_department = department_id is not None
 
         # Current entity as DataFrame
         current_row = pd.DataFrame([{
@@ -125,27 +212,25 @@ class PredictionHelper:
             'Overtime_Hours_Today': entity.overtime_hours_today or 0.0
         }])
 
+        # Calculate base confidence from data quality
+        data_quality, base_confidence = self._calculate_data_quality_confidence(
+            historical_count, sequence_length, has_department
+        )
+
         # STRATEGY 1: Sufficient historical data
         if historical_count >= sequence_length - 1:
             df = pd.concat([historical, current_row], ignore_index=True)
-            data_quality = "excellent"
-            confidence = 0.95
             print(f"✅ Using {historical_count} days of real data")
 
         # STRATEGY 2: Partial historical data
         elif historical_count > 0:
             days_needed = (sequence_length - 1) - historical_count
-            department_id = self.data_retriever.get_employee_department(entity.employee_id)
 
             if department_id:
                 fallback_values = self.data_retriever.get_department_averages(department_id)
-                data_quality = "good"
-                confidence = 0.80
                 print(f"ℹ️ Using {historical_count} real + {days_needed} synthetic (dept avg)")
             else:
                 fallback_values = self.data_retriever.get_global_averages()
-                data_quality = "fair"
-                confidence = 0.65
                 print(f"ℹ️ Using {historical_count} real + {days_needed} synthetic (global avg)")
 
             synthetic = self.create_synthetic_history(entity, days_needed, fallback_values)
@@ -154,17 +239,12 @@ class PredictionHelper:
         # STRATEGY 3: No historical data
         else:
             days_needed = sequence_length - 1
-            department_id = self.data_retriever.get_employee_department(entity.employee_id)
 
             if department_id:
                 fallback_values = self.data_retriever.get_department_averages(department_id)
-                data_quality = "estimated_dept"
-                confidence = 0.50
                 print(f"⚠️ New employee - using dept averages")
             else:
                 fallback_values = self.data_retriever.get_global_averages()
-                data_quality = "estimated_global"
-                confidence = 0.40
                 print(f"⚠️ New employee - using global averages")
 
             synthetic = self.create_synthetic_history(entity, days_needed, fallback_values)
@@ -176,22 +256,82 @@ class PredictionHelper:
         # Get last N days
         last_n_days = df_with_rolling[all_features].tail(sequence_length)
 
+        # Calculate enhanced confidence considering multiple factors
+        confidence = self._calculate_enhanced_confidence(
+            base_confidence=base_confidence,
+            entity=entity,
+            historical=historical,
+            historical_count=historical_count
+        )
+
         return last_n_days, data_quality, confidence
 
+    def _calculate_enhanced_confidence(
+        self,
+        base_confidence: float,
+        entity: DailyLogEntity,
+        historical: pd.DataFrame,
+        historical_count: int
+    ) -> float:
+        """
+        Calculate enhanced confidence score considering multiple factors.
+        
+        Factors considered:
+        1. Base data quality confidence
+        2. Feature completeness (how many features are present)
+        3. Historical data consistency (variance in historical patterns)
+        
+        Args:
+            base_confidence: Base confidence from data quality (0.0 to 1.0)
+            entity: Current daily log entity
+            historical: Historical data DataFrame
+            historical_count: Number of historical records
+            
+        Returns:
+            Enhanced confidence score (0.0 to 1.0)
+        """
+        # Factor 1: Feature completeness (weight: 20%)
+        feature_completeness = self._calculate_feature_completeness(entity)
+        completeness_contribution = feature_completeness * 0.20
+        
+        # Factor 2: Historical consistency (weight: 15%)
+        # Only apply if we have sufficient historical data
+        if historical_count >= 3:
+            consistency = self._calculate_historical_consistency(historical)
+            consistency_contribution = consistency * 0.15
+        else:
+            # Penalize for insufficient historical data
+            consistency_contribution = (historical_count / 3.0) * 0.15
+        
+        # Factor 3: Base data quality (weight: 65%)
+        base_contribution = base_confidence * 0.65
+        
+        # Combine all factors
+        enhanced_confidence = (
+            base_contribution +
+            completeness_contribution +
+            consistency_contribution
+        )
+        
+        # Ensure confidence is in valid range [0.0, 1.0]
+        enhanced_confidence = max(0.0, min(1.0, enhanced_confidence))
+        
+        return round(enhanced_confidence, 3)
+
     @staticmethod
-    def get_risk_level_and_message(
+    def get_prediction_type_and_message(
         burnout_rate: float,
         data_quality: str
     ) -> Tuple[str, str]:
         """
-        Determine risk level and message based on burnout rate and data quality.
+        Determine prediction type and message based on burnout rate and data quality.
 
         Args:
             burnout_rate: Predicted burnout rate (0.0 to 1.0)
             data_quality: Data quality indicator
 
         Returns:
-            Tuple of (risk_level, message)
+            Tuple of (prediction_type, message)
         """
         quality_suffixes = {
             "excellent": "",

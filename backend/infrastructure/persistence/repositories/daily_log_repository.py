@@ -23,12 +23,17 @@ class DailyLogRepository(DailyLogRepositoryInterface):
 
     def add(self, entity: DailyLogEntity) -> DailyLogEntity:
         """Add a new daily log."""
-        model = daily_log_entity_to_model(entity)
-        self.session.add(model)
-        self.session.flush()
-        entity.id = model.id
-        self._identity_map[entity.id] = entity
-        return entity
+        try:
+            model = daily_log_entity_to_model(entity)
+            self.session.add(model)
+            self.session.flush()
+            self.session.commit()
+            entity.id = model.id
+            self._identity_map[entity.id] = entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def get_by_id(self, log_id: int) -> Optional[DailyLogEntity]:
         """Get daily log by ID."""
@@ -77,37 +82,47 @@ class DailyLogRepository(DailyLogRepositoryInterface):
 
     def update(self, entity: DailyLogEntity) -> DailyLogEntity:
         """Update existing daily log."""
-        model = self.session.query(DailyLog).filter(
-            DailyLog.id == entity.id
-        ).first()
+        try:
+            model = self.session.query(DailyLog).filter(
+                DailyLog.id == entity.id
+            ).first()
 
-        if model:
-            model.employee_id = entity.employee_id
-            model.log_date = entity.log_date
-            model.hours_worked = entity.hours_worked
-            model.hours_slept = entity.hours_slept
-            model.daily_personal_time = entity.daily_personal_time
-            model.motivation_level = entity.motivation_level
-            model.stress_level = entity.stress_level
-            model.workload_intensity = entity.workload_intensity
-            model.overtime_hours_today = entity.overtime_hours_today
-            self.session.flush()
-            self._identity_map[entity.id] = entity
+            if model:
+                model.employee_id = entity.employee_id
+                model.log_date = entity.log_date
+                model.hours_worked = entity.hours_worked
+                model.hours_slept = entity.hours_slept
+                model.daily_personal_time = entity.daily_personal_time
+                model.motivation_level = entity.motivation_level
+                model.stress_level = entity.stress_level
+                model.workload_intensity = entity.workload_intensity
+                model.overtime_hours_today = entity.overtime_hours_today
+                self.session.flush()
+                self.session.commit()
+                self._identity_map[entity.id] = entity
 
-        return entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def delete(self, log_id: int) -> bool:
         """Delete daily log by ID."""
-        model = self.session.query(DailyLog).filter(
-            DailyLog.id == log_id
-        ).first()
+        try:
+            model = self.session.query(DailyLog).filter(
+                DailyLog.id == log_id
+            ).first()
 
-        if model:
-            self.session.delete(model)
-            if log_id in self._identity_map:
-                del self._identity_map[log_id]
-            return True
-        return False
+            if model:
+                self.session.delete(model)
+                self.session.commit()
+                if log_id in self._identity_map:
+                    del self._identity_map[log_id]
+                return True
+            return False
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def get_all_by_status(
             self,
@@ -171,7 +186,7 @@ class DailyLogRepository(DailyLogRepositoryInterface):
 
         return {
             "total_logs": total,
-            "pending": self.count_by_status(DailyLogStatus.PENDING),
+            "pending": self.count_by_status(DailyLogStatus.QUEUED),
             "processing": self.count_by_status(DailyLogStatus.PROCESSING),
             "analyzed": self.count_by_status(DailyLogStatus.ANALYZED),
             "pending_review": self.count_by_status(DailyLogStatus.PENDING_REVIEW),

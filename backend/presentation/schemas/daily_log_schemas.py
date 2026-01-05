@@ -65,6 +65,9 @@ class DailyLogResponse(BaseModel):
     workload_intensity: Optional[int] = Field(None, description="Workload intensity (1-10)")
     overtime_hours_today: Optional[float] = Field(None, description="Overtime hours")
     burnout_risk: str = Field(..., description="Calculated burnout risk (LOW/MEDIUM/HIGH)")
+    burnout_rate: Optional[float] = Field(None, description="Predicted or calculated burnout rate")
+    status: Optional[str] = Field(None, description="Log processing status")
+    processed_at: Optional[datetime] = Field(None, description="When the log was last processed")
 
     class Config:
         from_attributes = True
@@ -80,6 +83,7 @@ class DailyLogResponse(BaseModel):
                 "stress_level": 5,
                 "workload_intensity": 6,
                 "overtime_hours_today": 0.5,
-                "burnout_risk": "LOW"
+                "burnout_risk": "LOW",
+                "burnout_rate": 0.13
             }
         }

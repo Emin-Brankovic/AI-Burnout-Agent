@@ -23,17 +23,16 @@ class DailyLogService(BaseCRUDService[
     def map_insert_to_entity(self, request: Dict[str, Any]) -> DailyLogEntity:
         """Map insert request to DailyLogEntity."""
         return DailyLogEntity(
-            employee_id=request['employee_id'],
-            log_date=request.get('log_date', datetime.now()),
-            hours_worked=request.get('hours_worked'),
-            hours_slept=request.get('hours_slept'),
-            daily_personal_time=request.get('daily_personal_time'),
-            motivation_level=request.get('motivation_level'),
-            stress_level=request.get('stress_level'),
-            workload_intensity=request.get('workload_intensity'),
-            overtime_hours_today=request.get('overtime_hours_today')
+            employee_id=request.employee_id,
+            log_date=request.log_date or datetime.now(),
+            hours_worked=request.hours_worked,
+            hours_slept=request.hours_slept,
+            daily_personal_time=request.daily_personal_time,
+            motivation_level=request.motivation_level,
+            stress_level=request.stress_level,
+            workload_intensity=request.workload_intensity,
+            overtime_hours_today=request.overtime_hours_today,
         )
-
     def map_update_to_entity(
             self,
             entity: DailyLogEntity,

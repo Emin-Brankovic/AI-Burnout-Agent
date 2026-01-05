@@ -6,3 +6,4 @@ pydantic==2.6.4
 tensorflow==2.15.0
 uvicorn
 fastapi
+python-dotenv

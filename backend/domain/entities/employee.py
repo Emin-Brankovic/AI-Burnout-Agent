@@ -15,6 +15,8 @@ class EmployeeEntity:
     department_id: Optional[int] = None
     hire_date: Optional[datetime] = None
     id: Optional[int] = None
+    high_burnout_streak: int = 0
+    last_alert_sent: Optional[datetime] = None
 
     def __post_init__(self):
         """Validate entity after initialization."""

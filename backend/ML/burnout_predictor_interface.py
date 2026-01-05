@@ -61,14 +61,14 @@ class PredictionResult:
 
     Attributes:
         burnout_rate: Predicted burnout rate (0.0 to 1.0)
-        risk_level: Risk level (NORMAL, LOW, MEDIUM, HIGH, CRITICAL)
+        prediction_type: Risk level / prediction type (NORMAL, LOW, MEDIUM, HIGH, CRITICAL)
         message: Human-readable explanation
-        confidence: Model confidence (optional)
+        confidence_score: Model confidence (optional)
     """
     burnout_rate: float
-    risk_level: str
+    prediction_type: str
     message: str
-    confidence: Optional[float] = None
+    confidence_score: Optional[float] = None
 
 
 class IBurnoutPredictor(ABC):

@@ -91,6 +91,8 @@ def seed_employees(db: Session, departments: list, num_employees: int = 100):
             job_title=title,
             hire_date=fake.date_between(start_date='-5y', end_date='-1y'),
             salary=random.randint(1000, 7000),
+            high_burnout_streak=0,
+            last_alert_sent=None
         )
 
         db.add(employee)
@@ -140,8 +142,7 @@ def seed_daily_logs_from_csv(db: Session, csv_path: str = 'backend/data/employee
                 workload_intensity=log_data['Workload_Intensity'],
                 overtime_hours_today=log_data['Overtime_Hours_Today'],
                 status=DailyLogStatus.ANALYZED,  # Mark as analyzed since we have burnout data
-                processed_at=current_date,
-                reviewed_at=None
+                processed_at=current_date
             )
 
             db.add(daily_log)

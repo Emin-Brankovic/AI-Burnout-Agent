@@ -79,10 +79,10 @@ def predict_burnout(
             },
             "prediction": {
                 "burnout_rate": prediction_entity.prediction_value,
-                "risk_level": prediction_entity.risk_level,
+                "prediction_type": prediction_entity.prediction_type,
                 "confidence_score": prediction_entity.confidence_score,
                 "confidence_percentage": prediction_entity.get_confidence_percentage(),
-                "message": prediction_entity.message
+                "message": getattr(prediction_entity, 'message', None)
             },
             "timestamp": datetime.now().isoformat()
         }

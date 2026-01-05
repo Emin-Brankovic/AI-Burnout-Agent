@@ -18,12 +18,17 @@ class EmployeeRepository(EmployeeRepositoryInterface):
 
     def add(self, entity: EmployeeEntity) -> EmployeeEntity:
         """Add new employee to repository."""
-        model = employee_entity_to_model(entity)
-        self.session.add(model)
-        self.session.flush()  # Get ID without committing
-        entity.id = model.id
-        self._identity_map[entity.id] = entity
-        return entity
+        try:
+            model = employee_entity_to_model(entity)
+            self.session.add(model)
+            self.session.flush()  # Get ID without committing
+            self.session.commit() # Now commit
+            entity.id = model.id
+            self._identity_map[entity.id] = entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def get_by_id(self, employee_id: int) -> Optional[EmployeeEntity]:
         """Get employee by ID."""
@@ -56,22 +61,34 @@ class EmployeeRepository(EmployeeRepositoryInterface):
 
     def update(self, entity: EmployeeEntity) -> EmployeeEntity:
         """Update existing employee."""
-        model = self.session.query(Employee).filter(Employee.id == entity.id).first()
-        if model:
-            model.first_name = entity.first_name
-            model.last_name = entity.last_name
-            model.email = entity.email
-            model.department_id = entity.department_id
-            self.session.flush()
-            self._identity_map[entity.id] = entity
-        return entity
+        try:
+            model = self.session.query(Employee).filter(Employee.id == entity.id).first()
+            if model:
+                model.first_name = entity.first_name
+                model.last_name = entity.last_name
+                model.email = entity.email
+                model.department_id = entity.department_id
+                model.high_burnout_streak = entity.high_burnout_streak
+                model.last_alert_sent = entity.last_alert_sent
+                self.session.flush()
+                self.session.commit()
+                self._identity_map[entity.id] = entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def delete(self, employee_id: int) -> bool:
         """Delete employee by ID."""
-        model = self.session.query(Employee).filter(Employee.id == employee_id).first()
-        if model:
-            self.session.delete(model)
-            if employee_id in self._identity_map:
-                del self._identity_map[employee_id]
-            return True
-        return False
+        try:
+            model = self.session.query(Employee).filter(Employee.id == employee_id).first()
+            if model:
+                self.session.delete(model)
+                self.session.commit()
+                if employee_id in self._identity_map:
+                    del self._identity_map[employee_id]
+                return True
+            return False
+        except Exception as e:
+            self.session.rollback()
+            raise e

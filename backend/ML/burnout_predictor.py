@@ -279,7 +279,7 @@ class BurnoutPredictor(IBurnoutPredictor):
             self.load_model()
 
         # Prepare prediction data with fallback strategies
-        features_df, data_quality, confidence = self.prediction_helper.prepare_prediction_data(
+        features_df, data_quality, base_confidence = self.prediction_helper.prepare_prediction_data(
             entity=entity,
             all_features=self._all_features
         )
@@ -294,18 +294,73 @@ class BurnoutPredictor(IBurnoutPredictor):
         predicted_rate = self._model.predict(sliding_window)[0]
         predicted_rate = max(0.0, min(1.0, predicted_rate))  # Clip to [0, 1]
 
-        # Determine risk level
-        risk_level, message = self.prediction_helper.get_risk_level_and_message(
+        # Calculate model prediction uncertainty (based on distance from training distribution)
+        # For Ridge regression, we can use the prediction's distance from typical values
+        model_uncertainty_penalty = self._calculate_model_uncertainty(
+            sliding_window=sliding_window,
+            predicted_rate=predicted_rate
+        )
+
+        # Adjust confidence based on model uncertainty
+        # Higher uncertainty = lower confidence
+        final_confidence = base_confidence * (1.0 - model_uncertainty_penalty)
+        final_confidence = max(0.0, min(1.0, final_confidence))  # Ensure valid range
+
+        # Determine prediction type
+        prediction_type, message = self.prediction_helper.get_prediction_type_and_message(
             burnout_rate=predicted_rate,
             data_quality=data_quality
         )
 
         return PredictionResult(
             burnout_rate=predicted_rate,
-            risk_level=risk_level,
+            prediction_type=prediction_type,
             message=message,
-            confidence=confidence
+            confidence_score=round(final_confidence, 3)
+            #confidence_score=round(final_confidence, 3)  # Round to 3 decimal places
         )
+
+    def _calculate_model_uncertainty(
+        self,
+        sliding_window: np.ndarray,
+        predicted_rate: float
+    ) -> float:
+        """
+        Calculate model prediction uncertainty penalty (0.0 to 0.3).
+        
+        This estimates how far the prediction is from the model's training distribution.
+        Higher penalty = lower confidence.
+        
+        Args:
+            sliding_window: Scaled input features for prediction
+            predicted_rate: Predicted burnout rate
+            
+        Returns:
+            Uncertainty penalty (0.0 = no penalty, 0.3 = maximum penalty)
+        """
+        try:
+            # Check if prediction is in extreme ranges (very low or very high)
+            # Extreme predictions may be less reliable
+            if predicted_rate < 0.1 or predicted_rate > 0.9:
+                # Extreme predictions get a small penalty
+                return 0.10
+            
+            # Check feature values for outliers
+            # If features are very different from typical values, add penalty
+            feature_std = np.std(sliding_window)
+            if feature_std > 0.5:  # High variance in features
+                return 0.15
+            
+            # Check for NaN or infinite values
+            if np.any(np.isnan(sliding_window)) or np.any(np.isinf(sliding_window)):
+                return 0.25
+            
+            # Default: low uncertainty
+            return 0.05
+            
+        except Exception:
+            # If calculation fails, apply moderate penalty
+            return 0.10
 
     def predict_batch(self, entities: List[DailyLogEntity]) -> List[PredictionResult]:
         """

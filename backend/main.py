@@ -1,82 +1,126 @@
 import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 from backend.application.services.training_service import get_training_service
 from backend.infrastructure.persistence.databse_seeder import run_seeder
-from backend.services.new_model import MODEL_PATH, load_trained_model, train_model
-from infrastructure.persistence.database import init_db, check_database_exists
-from presentation.api import (
+from backend.services.new_model import MODEL_PATH
+from backend.infrastructure.persistence.database import init_db, check_database_exists, SessionLocal
+from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker, get_prediction_worker
+from backend.application.services.prediction_service import get_prediction_service
+from backend.application.services.email_service import get_email_notification_service
+
+from backend.presentation.api import (
     employee_routes,
     department_routes,
     daily_log_routes,
-    agent_prediction_routes
+    agent_prediction_routes,
+    review_routes
 )
 
-import uvicorn
+class AppState:
+    """Global application state"""
+    
+    def __init__(self):
+        # Infrastructure
+        self.db_session_factory = SessionLocal
+        
+        # Workers
+        self.prediction_worker: BurnoutPredictionWorker = None
+        
+        # Services
+        self.training_service = None
 
-# Create FastAPI app
+app_state = AppState()
 
-# Initialize database on startup
+# ========================================
+# LIFECYCLE
+# ========================================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
 
     print("=" * 80)
-    print("🚀 STARTING APPLICATION")
+    print("🚀 BURNOUT DETECTION SYSTEM STARTING")
     print("=" * 80)
 
-    # ========== DATABASE INITIALIZATION ==========
-    print("\n📊 Step 1: Database Initialization")
-    print("-" * 80)
-
-    # Initialize database (create tables)
-    init_db()
-
-    # Check if database needs seeding
+    # ========== 1 & 2: DATABASE & ML INITIALIZATION ==========
+    # (Keeping your existing logic for init_db and model loading...)
     if not check_database_exists():
-        print("\n📂 Database is empty - seeding with initial data...")
+        init_db()
         run_seeder()
-    else:
-        print("\n✅ Database already contains data - skipping seed")
-
-    # ========== ML MODEL INITIALIZATION ==========
-    print("\n🤖 Step 2: ML Model Initialization")
-    print("-" * 80)
-
+    
+    app_state.training_service = get_training_service()
     if os.path.exists(MODEL_PATH):
-        print(f"✅ Model found at {MODEL_PATH}")
-        print("   Loading model...")
-        training_service = get_training_service()
-        training_service.predictor.load_model(MODEL_PATH)
-        print("✅ Model loaded successfully!")
-    else:
-        print(f"⚠️  No model found at {MODEL_PATH}")
-        print("   Training new model...")
-        training_service = get_training_service()
-        model_path, metrics = await training_service.train_model()
-        print(f"\n✅ Model trained and saved to {model_path}")
-        print(f"   📊 Metrics:")
-        print(f"      - Train R²: {metrics.train_r2_score:.4f}")
-        print(f"      - Test R²: {metrics.test_r2_score:.4f}")
-        print(f"      - MAE: {metrics.mae:.4f}")
+        app_state.training_service.predictor.load_model(MODEL_PATH)
 
-    # ========== STARTUP COMPLETE ==========
+    # ========== 4/6: SERVICES INITIALIZATION ==========
+    print("\n⚙️  Step 4: Creating services...")
+    # Creating fresh database sessions for thread safety in workers
+    db_session = app_state.db_session_factory()
+    
+    # Initialize your core business services
+    # Note: Replace these with your actual Service class initializations
+    app_state.prediction_service = get_prediction_service(db_session)
+    app_state.notification_service = get_email_notification_service()
+    
+    # The Review Service we built earlier
+    from backend.application.services.review_service import ReviewService
+    from backend.application.helpers.agent_policy_helper import AgentPolicyHelper
+    
+    policy_helper = AgentPolicyHelper(
+        daily_log_repository=app_state.prediction_service.daily_log_repository,
+        prediction_repository=app_state.prediction_service.prediction_repository
+    )
+    
+    app_state.review_service = ReviewService(
+        prediction_repository=app_state.prediction_service.prediction_repository,
+        daily_log_repository=app_state.prediction_service.daily_log_repository,
+        employee_repository=app_state.prediction_service.employee_repository,
+        policy_helper=policy_helper,
+        notification_service=app_state.notification_service
+    )
+
+    # ========== 5/6: AGENT RUNNERS ==========
+    print("\n🤖 Step 5: Creating agent runners...")
+    # The "Runner" contains the Sense-Think-Act logic
+    from backend.application.agents.burnout_prediction_agent_runner import BurnoutPredictionAgentRunner
+    
+    app_state.prediction_runner = BurnoutPredictionAgentRunner(
+        queue_service=app_state.prediction_service.queue_service,
+        prediction_service=app_state.prediction_service,
+        email_notification_service=app_state.notification_service,
+        name="BurnoutPredictionAgent"
+    )
+
+    # ========== 6/6: BACKGROUND WORKERS ==========
+    print("\n🔄 Step 6: Starting background workers...")
+    # The "Worker" is the thread that keeps the Runner ticking
+    from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker
+    
+    app_state.prediction_worker = BurnoutPredictionWorker(
+        runner=app_state.prediction_runner,
+        tick_interval_seconds=5,
+        name="BurnoutWorker"
+    )
+    app_state.prediction_worker.start()
+
     print("\n" + "=" * 80)
     print("✅ APPLICATION READY!")
     print("=" * 80)
-    print("📖 API Documentation: http://localhost:8000/docs")
-    print("🔄 ReDoc: http://localhost:8000/redoc")
-    print("💚 Health Check: http://localhost:8000/health")
-    print("=" * 80 + "\n")
 
-    yield  # Application runs here
+    yield  # --- Application is running ---
 
     # ========== SHUTDOWN ==========
-    print("\n" + "=" * 80)
-    print("👋 Shutting down...")
-    print("=" * 80)
+    print("\n🛑 Shutting down...")
+    if app_state.prediction_worker:
+        app_state.prediction_worker.stop()
+    db_session.close()
+    print("✅ Shutdown complete")
 
 
 app = FastAPI(
@@ -86,7 +130,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware (if you have a frontend)
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Change to specific origins in production
@@ -101,6 +145,7 @@ app.include_router(employee_routes.router, prefix="/api")
 app.include_router(department_routes.router, prefix="/api")
 app.include_router(daily_log_routes.router, prefix="/api")
 app.include_router(agent_prediction_routes.router, prefix="/api")
+app.include_router(review_routes.router, prefix="/api")
 
 # Root endpoint
 @app.get("/")
@@ -109,16 +154,18 @@ def root():
     return {
         "message": "Employee Management & Burnout Prediction API",
         "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
+        "docs": "/docs"
     }
 
 # Health check endpoint
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "worker_running": app_state.prediction_worker.is_running if app_state.prediction_worker else False
+    }
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=8000, reload=True,log_level="debug" )
+    uvicorn.run("main:app", host="localhost", port=8000, reload=True, log_level="debug")

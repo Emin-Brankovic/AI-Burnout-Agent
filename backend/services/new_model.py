@@ -230,22 +230,22 @@ def predict_burnout(employee_input: EmployeeData):
 
     # Step 6: Generate risk assessment
     if predicted_burnout_rate > 0.85:
-        risk_level = 'CRITICAL'
+        prediction_type = 'CRITICAL'
         message = f'URGENT: High burnout rate ({predicted_burnout_rate:.1%}) detected.'
     elif predicted_burnout_rate > 0.70:
-        risk_level = 'WARNING'
+        prediction_type = 'WARNING'
         message = f'Warning: {predicted_burnout_rate:.1%} burnout rate. Take action to reduce stress.'
     elif predicted_burnout_rate > 0.45:
-        risk_level = 'CAUTION'
+        prediction_type = 'CAUTION'
         message = f'Some warning signs detected. Monitor your wellbeing closely.'
     else:
-        risk_level = 'NORMAL'
+        prediction_type = 'NORMAL'
         message = f'You appear to be maintaining a healthy balance.'
 
     result = PredictionResult(
         probability=round(predicted_burnout_rate * 100, 2),
-        risk_level=risk_level,
-        messagde=message
+        prediction_type=prediction_type,
+        message=message
     )
 
     return result

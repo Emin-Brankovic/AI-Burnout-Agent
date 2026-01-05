@@ -24,7 +24,7 @@ class EmployeeData(BaseModel):
 
 class PredictionResult(BaseModel):
     probability: float
-    risk_level: str
+    prediction_type: str
     message: str
     #recommendation: str
 

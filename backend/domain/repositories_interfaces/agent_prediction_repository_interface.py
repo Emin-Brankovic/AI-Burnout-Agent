@@ -1,5 +1,6 @@
 """AgentPrediction repository interface."""
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Optional, List
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
 
@@ -40,4 +41,14 @@ class AgentPredictionRepositoryInterface(ABC):
     @abstractmethod
     def delete(self, prediction_id: int) -> bool:
         """Delete prediction by ID."""
+        pass
+
+    @abstractmethod
+    def get_pending_reviews(self) -> List[AgentPredictionEntity]:
+        """Fetch all predictions that require HR attention."""
+        pass
+
+    @abstractmethod
+    def get_validated_since(self, since: datetime) -> List[AgentPredictionEntity]:
+        """Fetch samples where HR has validated AI predictions since a certain date."""
         pass

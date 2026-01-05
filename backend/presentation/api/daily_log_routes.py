@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import traceback
 
 from backend.infrastructure.persistence.database import get_db
 from backend.application.services.daily_log_service import DailyLogService
@@ -35,14 +36,19 @@ def create_daily_log(
             stress_level=entity.stress_level,
             workload_intensity=entity.workload_intensity,
             overtime_hours_today=entity.overtime_hours_today,
-            burnout_risk=entity.calculate_burnout_risk()
+            burnout_risk=entity.calculate_burnout_risk(),
         )
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
+
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+        tb = traceback.format_exc()  # 👈 captures full stack trace as string
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=tb
+        )
 
 
 @router.get("/", response_model=List[DailyLogResponse])
@@ -68,12 +74,15 @@ def get_all_daily_logs(
                 stress_level=entity.stress_level,
                 workload_intensity=entity.workload_intensity,
                 overtime_hours_today=entity.overtime_hours_today,
-                burnout_risk=entity.calculate_burnout_risk()
+                burnout_risk=entity.calculate_burnout_risk(),
+                burnout_rate=entity.calculate_burnout_rate()
             )
             for entity in result.items
         ]
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 
 @router.get("/{log_id}", response_model=DailyLogResponse)
@@ -94,7 +103,8 @@ def get_daily_log(log_id: int, db: Session = Depends(get_db)):
             stress_level=entity.stress_level,
             workload_intensity=entity.workload_intensity,
             overtime_hours_today=entity.overtime_hours_today,
-            burnout_risk=entity.calculate_burnout_risk()
+            burnout_risk=entity.calculate_burnout_risk(),
+            burnout_rate=entity.calculate_burnout_rate()
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -119,7 +129,8 @@ def get_logs_by_employee(employee_id: int, db: Session = Depends(get_db)):
                 stress_level=entity.stress_level,
                 workload_intensity=entity.workload_intensity,
                 overtime_hours_today=entity.overtime_hours_today,
-                burnout_risk=entity.calculate_burnout_risk()
+                burnout_risk=entity.calculate_burnout_risk(),
+                burnout_rate=entity.calculate_burnout_rate()
             )
             for entity in entities
         ]
@@ -151,7 +162,8 @@ def get_logs_by_date_range(
                 stress_level=entity.stress_level,
                 workload_intensity=entity.workload_intensity,
                 overtime_hours_today=entity.overtime_hours_today,
-                burnout_risk=entity.calculate_burnout_risk()
+                burnout_risk=entity.calculate_burnout_risk(),
+                burnout_rate=entity.calculate_burnout_rate()
             )
             for entity in entities
         ]
@@ -181,7 +193,8 @@ def update_daily_log(
             stress_level=entity.stress_level,
             workload_intensity=entity.workload_intensity,
             overtime_hours_today=entity.overtime_hours_today,
-            burnout_risk=entity.calculate_burnout_risk()
+            burnout_risk=entity.calculate_burnout_risk(),
+            burnout_rate=entity.calculate_burnout_rate()
         )
     except ValueError as e:
         db.rollback()

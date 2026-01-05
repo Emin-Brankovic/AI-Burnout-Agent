@@ -18,6 +18,10 @@ from .agent_prediction_schemas import (
     AgentPredictionUpdateRequest,
     AgentPredictionResponse
 )
+from .review_schemas import (
+    ReviewSubmitRequest,
+    ReviewDetailsResponse
+)
 
 __all__ = [
     # Employee
@@ -39,4 +43,8 @@ __all__ = [
     "AgentPredictionCreateRequest",
     "AgentPredictionUpdateRequest",
     "AgentPredictionResponse",
+
+    # Review
+    "ReviewSubmitRequest",
+    "ReviewDetailsResponse",
 ]

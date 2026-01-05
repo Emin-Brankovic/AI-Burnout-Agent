@@ -36,7 +36,9 @@ def employee_model_to_entity(model: Employee) -> EmployeeEntity:
         last_name=model.last_name,
         email=model.email,
         department_id=model.department_id,
-        hire_date=model.hire_date
+        hire_date=model.hire_date,
+        high_burnout_streak=model.high_burnout_streak if hasattr(model, 'high_burnout_streak') else 0,
+        last_alert_sent=model.last_alert_sent if hasattr(model, 'last_alert_sent') else None
     )
 
 
@@ -48,7 +50,9 @@ def employee_entity_to_model(entity: EmployeeEntity) -> Employee:
         last_name=entity.last_name,
         email=entity.email,
         department_id=entity.department_id,
-        hire_date=entity.hire_date
+        hire_date=entity.hire_date,
+        high_burnout_streak=entity.high_burnout_streak,
+        last_alert_sent=entity.last_alert_sent
     )
 
 
@@ -75,8 +79,7 @@ def daily_log_model_to_entity(model: DailyLog) -> DailyLogEntity:
         workload_intensity=model.workload_intensity,
         overtime_hours_today=model.overtime_hours_today,
         status=DailyLogStatus(model.status) if model.status else DailyLogStatus.PENDING,
-        processed_at=model.processed_at,
-        reviewed_at=model.reviewed_at
+        processed_at=model.processed_at
     )
 
 
@@ -102,8 +105,7 @@ def daily_log_entity_to_model(entity: DailyLogEntity) -> DailyLog:
         workload_intensity=entity.workload_intensity,
         overtime_hours_today=entity.overtime_hours_today,
         status=entity.status.value,  # Convert enum to string
-        processed_at=entity.processed_at,
-        reviewed_at=entity.reviewed_at
+        processed_at=entity.processed_at
     )
 
 
@@ -116,7 +118,11 @@ def agent_prediction_model_to_entity(model: AgentPrediction) -> AgentPredictionE
         prediction_type=model.prediction_type,
         prediction_value=model.prediction_value,
         confidence_score=model.confidence_score,
-        created_at=model.created_at
+        created_at=model.created_at,
+        needs_review=model.needs_review,
+        human_validation=model.human_validation,
+        review_notes=model.review_notes,
+        reviewed_at=model.reviewed_at
     )
 
 
@@ -128,5 +134,9 @@ def agent_prediction_entity_to_model(entity: AgentPredictionEntity) -> AgentPred
         prediction_type=entity.prediction_type,
         prediction_value=entity.prediction_value,
         confidence_score=entity.confidence_score,
-        created_at=entity.created_at
+        created_at=entity.created_at,
+        needs_review=entity.needs_review,
+        human_validation=entity.human_validation,
+        review_notes=entity.review_notes,
+        reviewed_at=entity.reviewed_at
     )

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, inspect, text
+
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, inspect, text, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from datetime import datetime
 from typing import List, Optional
@@ -24,8 +25,18 @@ print(f"💾 Database path: {DATABASE_PATH}")
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    echo=True  # Set to False in production
+    echo=False  # Set to False in production
 )
+
+# Enable WAL mode for SQLite to improve concurrency
+# from sqlalchemy import event
+
+# @event.listens_for(engine, "connect")
+# def set_sqlite_pragma(dbapi_connection, connection_record):
+#     cursor = dbapi_connection.cursor()
+#     cursor.execute("PRAGMA journal_mode=WAL")
+#     cursor.execute("PRAGMA synchronous=NORMAL")
+#     cursor.close()
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -59,6 +70,8 @@ class Employee(Base):
     job_title = Column(String(100), nullable=True)
     hire_date = Column(DateTime, default=datetime.utcnow)
     salary = Column(Float, nullable=True)
+    high_burnout_streak = Column(Integer, nullable=False, default=0)
+    last_alert_sent = Column(DateTime, nullable=True)
 
     department = relationship("Department", back_populates="employees")
     daily_logs = relationship("DailyLog", back_populates="employee")
@@ -78,8 +91,7 @@ class DailyLog(Base):
     workload_intensity = Column(Integer, nullable=True)
     overtime_hours_today = Column(Float, nullable=True)
     status = Column(String(50), nullable=False, default=DailyLogStatus.QUEUED)
-    processed_at=Column(DateTime, nullable=False)
-    reviewed_at = Column(DateTime, nullable=True)
+    processed_at = Column(DateTime, nullable=True)
 
     employee = relationship("Employee", back_populates="daily_logs")
     agent_predictions = relationship("AgentPrediction", back_populates="daily_log")
@@ -93,7 +105,11 @@ class AgentPrediction(Base):
     prediction_type = Column(String(50), nullable=False)
     prediction_value = Column(Text, nullable=True)
     confidence_score = Column(Float, nullable=True)
+    needs_review = Column(Boolean, default=False)
+    human_validation = Column(Boolean, nullable=True) #NULL = Not reviewed, True = AI was right, False = AI was wrong
+    review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_at = Column(DateTime, nullable=True)
 
     daily_log = relationship("DailyLog", back_populates="agent_predictions")
 

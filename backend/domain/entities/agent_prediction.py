@@ -14,6 +14,11 @@ class AgentPredictionEntity:
     confidence_score: Optional[float] = None
     id: Optional[int] = None
     created_at: Optional[datetime] = None
+    needs_review: bool = False
+    human_validation: Optional[bool] = None
+    review_notes: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    burnout_rate: Optional[float] = None
 
     def __post_init__(self):
         """Validate entity after initialization."""

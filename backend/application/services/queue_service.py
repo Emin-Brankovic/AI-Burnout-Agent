@@ -61,7 +61,7 @@ class DailyLogQueueService:
 
         return saved_entity
 
-    async def dequeue_next(self, status: DailyLogStatus = DailyLogStatus.PENDING) -> Optional[DailyLog]:
+    async def dequeue_next(self, status: DailyLogStatus = DailyLogStatus.QUEUED) -> Optional[DailyLog]:
         """
         Get next daily log from queue for processing.
 
@@ -140,7 +140,7 @@ class DailyLogQueueService:
 
         return await self.update_status(log_id, DailyLogStatus.FAILED)
 
-    async def get_queue_size(self, status: DailyLogStatus = DailyLogStatus.PENDING) -> int:
+    async def get_queue_size(self, status: DailyLogStatus = DailyLogStatus.QUEUED) -> int:
         """
         Get number of logs in queue with given status.
 
@@ -150,16 +150,31 @@ class DailyLogQueueService:
         Returns:
             Number of logs
         """
-        count = self.db.query(DailyLog).count()
+        # count = self.db.query(DailyLog).count()
+        #
+        # if hasattr(DailyLog, 'status'):
+        #     count = (
+        #         self.db.query(DailyLog)
+        #         .filter(DailyLog.status == status.value)
+        #         .count()
+        #     )
+        #queued_logs = self.db.query(DailyLog).filter(DailyLog.status == DailyLogStatus.QUEUED.value).all()
+        return self.db.query(DailyLog).filter(DailyLog.status == status.value).count()
 
-        if hasattr(DailyLog, 'status'):
-            count = (
-                self.db.query(DailyLog)
-                .filter(DailyLog.status == status.value)
-                .count()
-            )
-
-        return count
+    async def get_queue_stats(self) -> dict:
+        """
+        Get comprehensive queue statistics.
+        """
+        stats = {
+            "total": self.db.query(DailyLog).count(),
+            "queued": await self.get_queue_size(DailyLogStatus.QUEUED),
+            "processing": await self.get_queue_size(DailyLogStatus.PROCESSING),
+            "analyzed": await self.get_queue_size(DailyLogStatus.ANALYZED),
+            "pending_review": await self.get_queue_size(DailyLogStatus.PENDING_REVIEW),
+            "reviewed": await self.get_queue_size(DailyLogStatus.REVIEWED),
+            "failed": await self.get_queue_size(DailyLogStatus.FAILED)
+        }
+        return stats
 
 
 

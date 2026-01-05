@@ -18,13 +18,18 @@ class DepartmentRepository(DepartmentRepositoryInterface):
 
     def add(self, entity: DepartmentEntity) -> DepartmentEntity:
         """Add a new department."""
-        model = department_entity_to_model(entity)
-        self.session.add(model)
-        self.session.flush()
-        entity.id = model.id
-        entity.created_at = model.created_at
-        self._identity_map[entity.id] = entity
-        return entity
+        try:
+            model = department_entity_to_model(entity)
+            self.session.add(model)
+            self.session.flush()
+            self.session.commit()
+            entity.id = model.id
+            entity.created_at = model.created_at
+            self._identity_map[entity.id] = entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def get_by_id(self, department_id: int) -> Optional[DepartmentEntity]:
         """Get department by ID."""
@@ -61,27 +66,37 @@ class DepartmentRepository(DepartmentRepositoryInterface):
 
     def update(self, entity: DepartmentEntity) -> DepartmentEntity:
         """Update existing department."""
-        model = self.session.query(Department).filter(
-            Department.id == entity.id
-        ).first()
+        try:
+            model = self.session.query(Department).filter(
+                Department.id == entity.id
+            ).first()
 
-        if model:
-            model.name = entity.name
-            model.description = entity.description
-            self.session.flush()
-            self._identity_map[entity.id] = entity
+            if model:
+                model.name = entity.name
+                model.description = entity.description
+                self.session.flush()
+                self.session.commit()
+                self._identity_map[entity.id] = entity
 
-        return entity
+            return entity
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def delete(self, department_id: int) -> bool:
         """Delete department by ID."""
-        model = self.session.query(Department).filter(
-            Department.id == department_id
-        ).first()
+        try:
+            model = self.session.query(Department).filter(
+                Department.id == department_id
+            ).first()
 
-        if model:
-            self.session.delete(model)
-            if department_id in self._identity_map:
-                del self._identity_map[department_id]
-            return True
-        return False
+            if model:
+                self.session.delete(model)
+                self.session.commit()
+                if department_id in self._identity_map:
+                    del self._identity_map[department_id]
+                return True
+            return False
+        except Exception as e:
+            self.session.rollback()
+            raise e
