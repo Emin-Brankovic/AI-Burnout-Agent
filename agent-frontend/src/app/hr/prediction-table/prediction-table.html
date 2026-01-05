@@ -1,0 +1,74 @@
+<!-- prediction-table.html -->
+<div class="risk-monitor-container">
+  <div class="header">
+    <div class="header-content">
+      <div class="title-group">
+        <mat-icon class="title-icon">show_chart</mat-icon>
+        <h2 class="title">Burnout Risk Monitor</h2>
+      </div>
+      <p class="subtitle">Real-time employee wellness predictions with human-in-the-loop feedback</p>
+    </div>
+    <div class="header-actions">
+      <mat-icon class="employee-icon">people</mat-icon>
+      <span class="employee-count">10 employees</span>
+    </div>
+  </div>
+
+  <table mat-table [dataSource]="dataSource" class="risk-table">
+
+    <!-- Employee Column -->
+    <ng-container matColumnDef="employee">
+      <th mat-header-cell *matHeaderCellDef>Employee</th>
+      <td mat-cell *matCellDef="let element">
+        <div class="employee-cell">
+          <div class="employee-name">{{element.name}}</div>
+          <div class="employee-role">{{element.role}}</div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Department Column -->
+    <ng-container matColumnDef="department">
+      <th mat-header-cell *matHeaderCellDef>Department</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="department-text">{{element.department}}</span>
+      </td>
+    </ng-container>
+
+    <!-- Risk Score Column -->
+    <ng-container matColumnDef="riskScore">
+      <th mat-header-cell *matHeaderCellDef>Risk Score</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="risk-score-text">{{element.riskScore}}</span>
+      </td>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="status-text">{{element.status}}</span>
+      </td>
+    </ng-container>
+
+    <!-- Trend Column -->
+    <ng-container matColumnDef="trend">
+      <th mat-header-cell *matHeaderCellDef>Trend</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="trend-text">No data</span>
+      </td>
+    </ng-container>
+
+    <!-- Feedback Column -->
+    <ng-container matColumnDef="feedback">
+      <th mat-header-cell *matHeaderCellDef>Feedback</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="feedback-rejected">{{element.feedback}}</span>
+      </td>
+    </ng-container>
+
+    <!-- Header and Row Declarations -->
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+  </table>
+</div>
