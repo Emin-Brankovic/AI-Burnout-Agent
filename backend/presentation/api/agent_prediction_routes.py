@@ -9,6 +9,7 @@ from backend.application.services.prediction_service import get_prediction_servi
 from backend.domain.entities.daily_log import DailyLogEntity
 from backend.infrastructure.persistence.database import get_db
 from backend.application.services.agent_prediction_service import AgentPredictionService
+from backend.application.services.base_service import BaseSearchObject
 from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
 from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
 from backend.presentation.schemas import DailyLogCreateRequest
@@ -130,14 +131,15 @@ def create_prediction(
 
 @router.get("/", response_model=List[AgentPredictionResponse])
 def get_all_predictions(
-        page: Optional[int] = Query(None, ge=1),
-        page_size: Optional[int] = Query(None, ge=1, le=100),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(10, ge=1, le=100),
         db: Session = Depends(get_db)
 ):
     """Get all predictions with optional pagination."""
     try:
         service = AgentPredictionService(db)
-        result = service.get_all()
+        search = BaseSearchObject(page=page, page_size=page_size)
+        result = service.get_all(search)
 
         return [
             AgentPredictionResponse(

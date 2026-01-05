@@ -17,9 +17,9 @@ export class PredictionTable implements OnInit {
 
 
   ngOnInit(): void {
-    this.http.post<any>(this.apiUrl, requestData).subscribe({
-      next: (response: any) => {console.log(response);}
-    });
+    // this.http.post<any>(this.apiUrl, requestData).subscribe({
+    //   next: (response: any) => {console.log(response);}
+    // });
   }
 }
 

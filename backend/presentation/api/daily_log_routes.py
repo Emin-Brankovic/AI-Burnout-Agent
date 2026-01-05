@@ -6,6 +6,7 @@ import traceback
 
 from backend.infrastructure.persistence.database import get_db
 from backend.application.services.daily_log_service import DailyLogService
+from backend.application.services.base_service import BaseSearchObject
 from backend.presentation.schemas.daily_log_schemas import (
     DailyLogCreateRequest,
     DailyLogUpdateRequest,
@@ -53,14 +54,15 @@ def create_daily_log(
 
 @router.get("/", response_model=List[DailyLogResponse])
 def get_all_daily_logs(
-        page: Optional[int] = Query(None, ge=1),
-        page_size: Optional[int] = Query(None, ge=1, le=100),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(10, ge=1, le=100),
         db: Session = Depends(get_db)
 ):
     """Get all daily logs with optional pagination."""
     try:
         service = DailyLogService(db)
-        result = service.get_all()
+        search = BaseSearchObject(page=page, page_size=page_size)
+        result = service.get_all(search)
 
         return [
             DailyLogResponse(
