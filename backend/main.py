@@ -12,13 +12,13 @@ from backend.infrastructure.persistence.database import init_db, check_database_
 from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker, get_prediction_worker
 from backend.application.services.prediction_service import get_prediction_service
 from backend.application.services.email_service import get_email_notification_service
-
 from backend.presentation.api import (
     employee_routes,
     department_routes,
     daily_log_routes,
     agent_prediction_routes,
-    review_routes
+    review_routes,
+    dashboard_routes
 )
 
 class AppState:
@@ -146,6 +146,7 @@ app.include_router(department_routes.router, prefix="/api")
 app.include_router(daily_log_routes.router, prefix="/api")
 app.include_router(agent_prediction_routes.router, prefix="/api")
 app.include_router(review_routes.router, prefix="/api")
+app.include_router(dashboard_routes.router, prefix="/api")
 
 # Root endpoint
 @app.get("/")

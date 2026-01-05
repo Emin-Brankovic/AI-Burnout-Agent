@@ -1,5 +1,5 @@
-import {Component, OnInit} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import { Component, Input, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-prediction-table',
@@ -7,19 +7,47 @@ import {HttpClient} from '@angular/common/http';
   templateUrl: './prediction-table.html',
   styleUrl: './prediction-table.css',
 })
-
-
 export class PredictionTable implements OnInit {
   displayedColumns: string[] = ['employee', 'department', 'riskScore', 'status', 'trend', 'feedback'];
-  dataSource = ELEMENT_DATA;
-  constructor(private http: HttpClient) {}
-  private apiUrl = 'http://localhost:8000/api/predictions/predict';
+  dataSource: EmployeeData[] = [];
 
+  @Input() set predictions(data: any[]) {
+    if (data) {
+      this.dataSource = data.map(item => ({
+        initial: (item.name || '?').charAt(0),
+        name: item.name,
+        role: item.role,
+        department: item.department,
+        riskScore: item.risk_score,
+        status: item.status,
+        statusClass: this.getStatusClass(item.status),
+        trendIcon: this.getTrendIcon(item.trend),
+        feedbackType: item.has_feedback ? 'confirmed' : 'buttons'
+      }));
+    }
+  }
 
-  ngOnInit(): void {
-    // this.http.post<any>(this.apiUrl, requestData).subscribe({
-    //   next: (response: any) => {console.log(response);}
-    // });
+  constructor(private http: HttpClient) { }
+
+  ngOnInit(): void { }
+
+  private getStatusClass(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'CRITICAL': return 'status-critical';
+      case 'HIGH': return 'status-high';
+      case 'MEDIUM': return 'status-medium';
+      case 'LOW':
+      case 'NORMAL': return 'status-low';
+      default: return 'status-low';
+    }
+  }
+
+  private getTrendIcon(trend: string): string {
+    switch (trend?.toLowerCase()) {
+      case 'increasing': return 'trending_up';
+      case 'decreasing': return 'trending_down';
+      default: return 'trending_flat';
+    }
   }
 }
 

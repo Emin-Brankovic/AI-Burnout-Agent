@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-status-card',
@@ -9,6 +9,7 @@ import {Component, Input} from '@angular/core';
 export class StatusCard {
   @Input() status!: EmployeeStatus;
   @Input() count: number = 0;
+  @Input() summary: any;
 
   get statusLabel(): string {
     return this.status.charAt(0).toUpperCase() + this.status.slice(1);

@@ -10,12 +10,67 @@
   </header>
 
   <main class="main">
-    <app-status-card ></app-status-card>
 
+    <app-status-card [summary]="dashboardData()?.summary"></app-status-card>
 
-    <app-prediction-table>
-    </app-prediction-table>
+    <!-- Filters Section -->
+    <div class="filters-container">
+      <div class="filters-header">
+        <mat-icon class="filter-icon">filter_list</mat-icon>
+        <h3 class="filters-title">Filters</h3>
+      </div>
+
+      <div class="filters-grid">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Department</mat-label>
+          <mat-select [(value)]="filterDepartment" (selectionChange)="onFilterChange()">
+            <mat-option [value]="null">All Departments</mat-option>
+            <mat-option *ngFor="let dept of departments" [value]="dept">
+              {{ dept }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select [(value)]="filterStatus" (selectionChange)="onFilterChange()">
+            <mat-option [value]="null">All Statuses</mat-option>
+            <mat-option *ngFor="let status of statuses" [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Trend</mat-label>
+          <mat-select [(value)]="filterTrend" (selectionChange)="onFilterChange()">
+            <mat-option [value]="null">All Trends</mat-option>
+            <mat-option *ngFor="let trend of trends" [value]="trend.value">
+              {{ trend.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" class="clear-filters-btn"  (click)="clearFilters()">
+          <mat-icon>clear</mat-icon>
+          Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <app-prediction-table [predictions]="dashboardData()?.employees"></app-prediction-table>
+
+    <mat-paginator *ngIf="isLoaded && totalItems > 0" [length]="totalItems" [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions" [pageIndex]="pageIndex" (page)="onPageChange($event)" showFirstLastButtons
+      aria-label="Select page">
+    </mat-paginator>
   </main>
+
+  <ng-template #loading>
+    <div class="loading-state">
+      <p>Loading dashboard data...</p>
+    </div>
+  </ng-template>
 
   <footer class="footer">
     <p>Burnout Prevention Agent v1.0</p>

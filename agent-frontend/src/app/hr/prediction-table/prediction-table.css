@@ -124,21 +124,67 @@
   color: #6b7280;
 }
 
-/* Status */
-.status-text {
+/* Status Badges */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-critical {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.status-high {
+  background-color: #ffedd5;
+  color: #f97316;
+}
+
+.status-medium {
+  background-color: #fef3c7;
+  color: #f59e0b;
+}
+
+.status-low {
+  background-color: #d1fae5;
+  color: #10b981;
+}
+
+/* Trend Icons */
+.trend-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.trending_up {
+  color: #ef4444;
+}
+
+.trending_flat {
   color: #6b7280;
 }
 
-/* Trend */
-.trend-text {
-  color: #6b7280;
+.trending_down {
+  color: #10b981;
 }
 
 /* Feedback */
-.feedback-rejected {
-  color: #ef4444;
+.feedback-confirmed {
+  color: #10b981;
   font-weight: 500;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feedback-confirmed::before {
+  content: 'check_circle';
+  font-family: 'Material Icons';
+  font-size: 16px;
 }
 
 /* Remove Material elevation */

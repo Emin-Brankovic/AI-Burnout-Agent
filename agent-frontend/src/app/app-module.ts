@@ -1,14 +1,13 @@
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
-import { PredictionTable } from './prediction-table/prediction-table';
 
 @NgModule({
   declarations: [
-    App,
-    PredictionTable
+    App
   ],
   imports: [
     BrowserModule,
@@ -16,7 +15,8 @@ import { PredictionTable } from './prediction-table/prediction-table';
 
   ],
   providers: [
-    provideBrowserGlobalErrorListeners()
+    provideBrowserGlobalErrorListeners(),
+    provideHttpClient()
   ],
   bootstrap: [App]
 })

@@ -10,7 +10,7 @@
     </div>
     <div class="header-actions">
       <mat-icon class="employee-icon">people</mat-icon>
-      <span class="employee-count">10 employees</span>
+      <span class="employee-count">{{dataSource.length}} employees</span>
     </div>
   </div>
 
@@ -39,7 +39,7 @@
     <ng-container matColumnDef="riskScore">
       <th mat-header-cell *matHeaderCellDef>Risk Score</th>
       <td mat-cell *matCellDef="let element">
-        <span class="risk-score-text">{{element.riskScore}}</span>
+        <span class="risk-score-text">{{element.riskScore}}%</span>
       </td>
     </ng-container>
 
@@ -47,7 +47,7 @@
     <ng-container matColumnDef="status">
       <th mat-header-cell *matHeaderCellDef>Status</th>
       <td mat-cell *matCellDef="let element">
-        <span class="status-text">{{element.status}}</span>
+        <span class="status-badge" [ngClass]="element.statusClass">{{element.status}}</span>
       </td>
     </ng-container>
 
@@ -55,15 +55,17 @@
     <ng-container matColumnDef="trend">
       <th mat-header-cell *matHeaderCellDef>Trend</th>
       <td mat-cell *matCellDef="let element">
-        <span class="trend-text">No data</span>
+        <mat-icon class="trend-icon" [ngClass]="element.trendIcon">{{element.trendIcon}}</mat-icon>
       </td>
     </ng-container>
 
     <!-- Feedback Column -->
     <ng-container matColumnDef="feedback">
-      <th mat-header-cell *matHeaderCellDef>Feedback</th>
+      <th mat-header-cell *matHeaderCellDef>Validation</th>
       <td mat-cell *matCellDef="let element">
-        <span class="feedback-rejected">{{element.feedback}}</span>
+        <button mat-stroked-button color="primary" *ngIf="element.feedbackType === 'buttons'"
+          size="small">Review</button>
+        <span class="feedback-confirmed" *ngIf="element.feedbackType === 'confirmed'">Validated</span>
       </td>
     </ng-container>
 

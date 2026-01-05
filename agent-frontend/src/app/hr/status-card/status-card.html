@@ -5,7 +5,7 @@
       <div class="stat-content">
         <div class="stat-info">
           <p class="stat-label">Critical Risk</p>
-          <p class="stat-value">3</p>
+          <p class="stat-value">{{summary?.critical_count || 0}}</p>
         </div>
         <div class="stat-icon-wrapper">
           <mat-icon class="stat-icon">warning</mat-icon>
@@ -20,7 +20,7 @@
       <div class="stat-content">
         <div class="stat-info">
           <p class="stat-label">Monitor</p>
-          <p class="stat-value">7</p>
+          <p class="stat-value">{{summary?.monitor_count || 0}}</p>
         </div>
         <div class="stat-icon-wrapper">
           <mat-icon class="stat-icon">visibility</mat-icon>
@@ -35,7 +35,7 @@
       <div class="stat-content">
         <div class="stat-info">
           <p class="stat-label">Stable</p>
-          <p class="stat-value">15</p>
+          <p class="stat-value">{{summary?.stable_count || 0}}</p>
         </div>
         <div class="stat-icon-wrapper">
           <mat-icon class="stat-icon">check_circle</mat-icon>
@@ -44,28 +44,13 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Card 4 - Total Employees -->
-<!--  <mat-card class="stat-card neutral">-->
-<!--    <mat-card-content>-->
-<!--      <div class="stat-content">-->
-<!--        <div class="stat-info">-->
-<!--          <p class="stat-label">Total Employees</p>-->
-<!--          <p class="stat-value">25</p>-->
-<!--        </div>-->
-<!--        <div class="stat-icon-wrapper">-->
-<!--          <mat-icon class="stat-icon">people</mat-icon>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </mat-card-content>-->
-<!--  </mat-card>-->
-
   <!-- Card 5 - Avg Risk Score -->
   <mat-card class="stat-card neutral">
     <mat-card-content>
       <div class="stat-content">
         <div class="stat-info">
           <p class="stat-label">Avg Risk Score</p>
-          <p class="stat-value">42%</p>
+          <p class="stat-value">{{summary?.average_risk_percent || 0}}%</p>
         </div>
         <div class="stat-icon-wrapper">
           <mat-icon class="stat-icon">analytics</mat-icon>
@@ -74,4 +59,3 @@
     </mat-card-content>
   </mat-card>
 </div>
-
