@@ -1,0 +1,120 @@
+<mat-card class="metrics-card">
+  <mat-card-header>
+    <mat-card-title class="flex-row">
+      <mat-icon color="primary">favorite</mat-icon>
+      Daily Wellness Check-In
+    </mat-card-title>
+    <mat-card-subtitle>
+      Submit your daily work metrics for burnout risk assessment
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="metricsForm" (ngSubmit)="onSubmit()" class="form-container">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Employee</mat-label>
+        <mat-select formControlName="employee_id">
+          <mat-option *ngFor="let emp of employees" [value]="emp.id">
+            {{ emp.name }} ({{ emp.role }})
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="metricsForm.get('employee_id')?.hasError('required')">
+          Please select an employee
+        </mat-error>
+      </mat-form-field>
+
+      <div class="grid-layout">
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>schedule</mat-icon> Work Hours</span>
+            <span class="value">{{ metricsForm.get('hours_worked')?.value }}h</span>
+          </div>
+          <mat-slider min="0" max="16" step="1" discrete>
+            <input matSliderThumb formControlName="hours_worked">
+          </mat-slider>
+          <small class="hint">Daily work hours</small>
+        </div>
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>psychology</mat-icon> Stress Level</span>
+            <span class="value">{{ metricsForm.get('stress_level')?.value }}/10</span>
+          </div>
+          <mat-slider min="0" max="10" step="0.5" discrete>
+            <input matSliderThumb formControlName="stress_level">
+          </mat-slider>
+          <small class="hint">0 = No stress, 10 = Extreme</small>
+        </div>
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>bedtime</mat-icon> Sleep Hours</span>
+            <span class="value">{{ metricsForm.get('hours_slept')?.value }}h</span>
+          </div>
+          <mat-slider min="0" max="12" step="0.5" discrete>
+            <input matSliderThumb formControlName="hours_slept">
+          </mat-slider>
+          <small class="hint">Average nightly sleep</small>
+        </div>
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>emoji_emotions</mat-icon> Motivation Level</span>
+            <span class="value">{{ metricsForm.get('motivation_level')?.value }}/10</span>
+          </div>
+          <mat-slider min="1" max="10" step="1" discrete>
+            <input matSliderThumb formControlName="motivation_level">
+          </mat-slider>
+          <small class="hint">1 = Very low, 10 = Highly motivated</small>
+        </div>
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>trending_up</mat-icon> Workload Intensity</span>
+            <span class="value">{{ metricsForm.get('workload_intensity')?.value }}/10</span>
+          </div>
+          <mat-slider min="1" max="10" step="1" discrete>
+            <input matSliderThumb formControlName="workload_intensity">
+          </mat-slider>
+          <small class="hint">1 = Very light, 10 = Extremely heavy</small>
+        </div>
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>self_improvement</mat-icon> Personal Time</span>
+            <span class="value">{{ metricsForm.get('daily_personal_time')?.value }}h</span>
+          </div>
+          <mat-slider min="0" max="12" step="0.5" discrete>
+            <input matSliderThumb formControlName="daily_personal_time">
+          </mat-slider>
+          <small class="hint">Hours for yourself today</small>
+        </div>
+
+
+        <div class="metric-item">
+          <div class="label-row">
+            <span class="label"><mat-icon>schedule</mat-icon> Overtime Today</span>
+            <span class="value">{{ metricsForm.get('overtime_hours_today')?.value }}h</span>
+          </div>
+          <mat-slider min="0" max="12" step="0.5" discrete>
+            <input matSliderThumb formControlName="overtime_hours_today">
+          </mat-slider>
+          <small class="hint">Extra working hours today</small>
+        </div>
+
+
+
+      </div>
+
+      <button mat-raised-button color="primary" class="submit-btn"
+              [disabled]="isSubmitting || metricsForm.invalid">
+        <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
+        <mat-icon *ngIf="!isSubmitting">send</mat-icon>
+        {{ isSubmitting ? 'Analyzing...' : 'Submit Wellness Check' }}
+      </button>
+
+    </form>
+  </mat-card-content>
+</mat-card>

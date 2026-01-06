@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -59,5 +59,35 @@ class EmployeeResponse(BaseModel):
                 "department_id": 1,
                 "hire_date": "2024-01-15T10:30:00",
                 "full_name": "John Doe"
+            }
+        }
+
+
+class EmployeePaginatedResponse(BaseModel):
+    """DTO for paginated employee responses."""
+    employees: List[EmployeeResponse] = Field(..., description="List of employees")
+    total: int = Field(..., description="Total number of employees")
+    page: int = Field(..., description="Current page number")
+    page_size: int = Field(..., description="Number of items per page")
+    total_pages: int = Field(..., description="Total number of pages")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "employees": [
+                    {
+                        "id": 1,
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "email": "john.doe@example.com",
+                        "department_id": 1,
+                        "hire_date": "2024-01-15T10:30:00",
+                        "full_name": "John Doe"
+                    }
+                ],
+                "total": 50,
+                "page": 1,
+                "page_size": 10,
+                "total_pages": 5
             }
         }

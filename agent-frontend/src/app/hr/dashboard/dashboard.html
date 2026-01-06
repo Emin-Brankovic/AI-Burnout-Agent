@@ -1,13 +1,6 @@
 <div class="dashboard">
-  <header class="header">
-    <div class="header-content">
-      <div class="logo">
-        <span class="logo-icon">🧠</span>
-        <h1 class="logo-text">Burnout Prevention Agent</h1>
-      </div>
-      <p class="tagline">AI-powered employee wellness monitoring</p>
-    </div>
-  </header>
+  <!-- Centralized Navigation Bar -->
+  <app-navbar></app-navbar>
 
   <main class="main">
 
@@ -51,7 +44,7 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" class="clear-filters-btn"  (click)="clearFilters()">
+        <button mat-raised-button color="primary" class="clear-filters-btn" (click)="clearFilters()">
           <mat-icon>clear</mat-icon>
           Clear Filters
         </button>

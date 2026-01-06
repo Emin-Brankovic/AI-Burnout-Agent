@@ -7,7 +7,8 @@ from backend.application.services.employee_service import EmployeeService
 from backend.presentation.schemas.employee_schemas import (
     EmployeeCreateRequest,
     EmployeeUpdateRequest,
-    EmployeeResponse
+    EmployeeResponse,
+    EmployeePaginatedResponse
 )
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
@@ -40,24 +41,42 @@ def create_employee(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
-@router.get("/", response_model=List[EmployeeResponse])
+@router.get("/", response_model=EmployeePaginatedResponse)
 def get_all_employees(
-        page: Optional[int] = Query(None, ge=1),
-        page_size: Optional[int] = Query(None, ge=1, le=100),
-        department_id: Optional[int] = None,
+        page: int = Query(1, ge=1, description="Page number"),
+        page_size: int = Query(10, ge=1, le=100, description="Items per page"),
+        department_id: Optional[int] = Query(None, description="Filter by department ID"),
         db: Session = Depends(get_db)
 ):
-    """Get all employees with optional filtering and pagination."""
+    """Get all employees with pagination and optional filtering.
+    
+    Query Parameters:
+    - page: Page number (default: 1)
+    - page_size: Items per page (default: 10, max: 100)
+    - department_id: Filter by department ID (optional)
+    """
     try:
         service = EmployeeService(db)
 
+        # Get all employees (filtered by department if specified)
         if department_id:
-            entities = service.get_by_department(department_id)
+            all_entities = service.get_by_department(department_id)
         else:
             result = service.get_all()
-            entities = result.items
+            all_entities = result.items
+        
+        # Calculate pagination
+        total_count = len(all_entities)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_entities = all_entities[start_idx:end_idx]
+        
+        # Calculate total pages
+        import math
+        total_pages = math.ceil(total_count / page_size) if page_size > 0 else 0
 
-        return [
+        # Build response
+        employees = [
             EmployeeResponse(
                 id=entity.id,
                 first_name=entity.first_name,
@@ -67,8 +86,16 @@ def get_all_employees(
                 hire_date=entity.hire_date,
                 full_name=entity.get_full_name()
             )
-            for entity in entities
+            for entity in paginated_entities
         ]
+        
+        return EmployeePaginatedResponse(
+            employees=employees,
+            total=total_count,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

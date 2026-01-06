@@ -2,9 +2,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Dashboard } from './dashboard/dashboard';
-import { BurnoutRiskMonitor } from './burnout-risk-monitor/burnout-risk-monitor';
 import { Header } from './header/header';
 import { HrRoutingModule } from './hr-routing-module';
+import { SharedModule } from '../shared/shared-module';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -16,19 +16,23 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { StatusCard } from './status-card/status-card';
 import { PredictionTable } from './prediction-table/prediction-table';
+import { EmployeeForm } from './employee-form/employee-form';
+import { MatSlider, MatSliderThumb } from '@angular/material/slider';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @NgModule({
   declarations: [
     Dashboard,
-    BurnoutRiskMonitor,
     Header,
     StatusCard,
-    PredictionTable
+    PredictionTable,
+    EmployeeForm
   ],
   imports: [
     CommonModule,
     HrRoutingModule,
     ReactiveFormsModule,
+    SharedModule,
     MatIconModule,
     MatCardModule,
     MatTableModule,
@@ -37,6 +41,9 @@ import { PredictionTable } from './prediction-table/prediction-table';
     MatPaginatorModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatSlider,
+    MatSliderThumb,
+    MatProgressSpinner,
   ]
 })
 export class HrModule { }
