@@ -1,9 +1,13 @@
 from backend.domain.entities.employee import EmployeeEntity
 from backend.domain.entities.department import DepartmentEntity
 from backend.domain.entities.daily_log import DailyLogEntity
+
 from backend.domain.entities.agent_prediction import AgentPredictionEntity
+from backend.domain.entities.system_settings import SystemSettingsEntity
+from backend.domain.entities.model_version import ModelVersionEntity
 from backend.domain.enums.enums import DailyLogStatus
-from backend.infrastructure.persistence.database import Employee, Department, DailyLog, AgentPrediction
+from backend.infrastructure.persistence.database import Employee, Department, DailyLog, AgentPrediction, SystemSettings, ModelVersion
+
 
 
 # Department Mappers
@@ -140,3 +144,56 @@ def agent_prediction_entity_to_model(entity: AgentPredictionEntity) -> AgentPred
         review_notes=entity.review_notes,
         reviewed_at=entity.reviewed_at
     )
+
+
+# SystemSettings Mappers
+def system_settings_model_to_entity(model: SystemSettings) -> SystemSettingsEntity:
+    """Convert SQLAlchemy SystemSettings model to domain entity."""
+    return SystemSettingsEntity(
+        id=model.id,
+        new_samples_count=model.new_samples_count,
+        retrain_threshold=model.retrain_threshold,
+        auto_retrain_enabled=model.auto_retrain_enabled,
+        last_retrain_at=model.last_retrain_at,
+        retrain_count=model.retrain_count
+    )
+
+
+def system_settings_entity_to_model(entity: SystemSettingsEntity) -> SystemSettings:
+    """Convert domain entity to SQLAlchemy SystemSettings model."""
+    return SystemSettings(
+        id=entity.id,
+        new_samples_count=entity.new_samples_count,
+        retrain_threshold=entity.retrain_threshold,
+        auto_retrain_enabled=entity.auto_retrain_enabled,
+        last_retrain_at=entity.last_retrain_at,
+        retrain_count=entity.retrain_count
+    )
+
+
+# ModelVersion Mappers
+def model_version_model_to_entity(model: ModelVersion) -> ModelVersionEntity:
+    """Convert SQLAlchemy ModelVersion model to domain entity."""
+    return ModelVersionEntity(
+        id=model.id,
+        version_number=model.version_number,
+        training_mode=model.training_mode,
+        dataset_size=model.dataset_size,
+        accuracy=model.accuracy,
+        model_file_path=model.model_file_path,
+        created_at=model.created_at
+    )
+
+
+def model_version_entity_to_model(entity: ModelVersionEntity) -> ModelVersion:
+    """Convert domain entity to SQLAlchemy ModelVersion model."""
+    return ModelVersion(
+        id=entity.id,
+        version_number=entity.version_number,
+        training_mode=entity.training_mode,
+        dataset_size=entity.dataset_size,
+        accuracy=entity.accuracy,
+        model_file_path=entity.model_file_path,
+        created_at=entity.created_at
+    )
+

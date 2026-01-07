@@ -20,6 +20,7 @@ from backend.presentation.api import (
     review_routes,
     dashboard_routes
 )
+from backend.application.services.review_service import get_review_service
 
 class AppState:
     """Global application state"""
@@ -49,9 +50,11 @@ async def lifespan(app: FastAPI):
     print("=" * 80)
 
     # ========== 1 & 2: DATABASE & ML INITIALIZATION ==========
-    # (Keeping your existing logic for init_db and model loading...)
+    # Ensure all tables exist (safe to run on existing DB)
+    init_db()
+
+    # Only run seeder if the main data tables are empty
     if not check_database_exists():
-        init_db()
         run_seeder()
     
     app_state.training_service = get_training_service()
@@ -67,23 +70,12 @@ async def lifespan(app: FastAPI):
     # Note: Replace these with your actual Service class initializations
     app_state.prediction_service = get_prediction_service(db_session)
     app_state.notification_service = get_email_notification_service()
+    app_state.review_service = get_review_service(db_session)
     
     # The Review Service we built earlier
-    from backend.application.services.review_service import ReviewService
-    from backend.application.helpers.agent_policy_helper import AgentPolicyHelper
+
     
-    policy_helper = AgentPolicyHelper(
-        daily_log_repository=app_state.prediction_service.daily_log_repository,
-        prediction_repository=app_state.prediction_service.prediction_repository
-    )
-    
-    app_state.review_service = ReviewService(
-        prediction_repository=app_state.prediction_service.prediction_repository,
-        daily_log_repository=app_state.prediction_service.daily_log_repository,
-        employee_repository=app_state.prediction_service.employee_repository,
-        policy_helper=policy_helper,
-        notification_service=app_state.notification_service
-    )
+
 
     # ========== 5/6: AGENT RUNNERS ==========
     print("\n🤖 Step 5: Creating agent runners...")
@@ -99,7 +91,51 @@ async def lifespan(app: FastAPI):
 
     # ========== 6/6: BACKGROUND WORKERS ==========
     print("\n🔄 Step 6: Starting background workers...")
-    # The "Worker" is the thread that keeps the Runner ticking
+    
+    # A. Scoped Session Factory for Thread-Safe Singleton Access
+    from sqlalchemy.orm import scoped_session
+    from backend.infrastructure.persistence.database import SessionLocal
+    from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
+    from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
+    from backend.ML.burnout_predictor import BurnoutPredictor
+    
+    # Create a thread-local session factory. 
+    # Any usage of this proxy object in a thread gets a dedicated session.
+    ThreadLocalSession = scoped_session(SessionLocal)
+    
+    def model_factory():
+        """
+        Creates a BurnoutPredictor that uses thread-local DB sessions.
+        Safe to be held as a singleton in ModelRegistry.
+        """
+        # Pass the scoped_session proxy as the 'session' argument
+        # Repositories will blindly call .query() on it, which delegates to thread-local session
+        d_repo = DailyLogRepository(ThreadLocalSession)
+        e_repo = EmployeeRepository(ThreadLocalSession)
+        
+        # Determine strict model path model_path or default
+        model_path = 'backend/ml_models/burnout_model.pkl'
+        
+        pred = BurnoutPredictor(daily_log_repo=d_repo, employee_repo=e_repo)
+        
+        # Load weights if available
+        if os.path.exists(model_path):
+             pred.load_model(model_path)
+             
+        return pred
+
+    # B. Initialize ModelRegistry with initial model
+    from backend.application.services.model_registry import ModelRegistry
+    registry = ModelRegistry()
+    if not registry.active_model:
+        print("   🏗️ Loading initial model into Registry...")
+        try:
+            initial_model = model_factory()
+            registry.load_new_model(initial_model)
+        except Exception as e:
+             print(f"   ⚠️ Failed to load initial model: {e}")
+
+    # C. Start Prediction Worker (Queue Processor)
     from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker
     
     app_state.prediction_worker = BurnoutPredictionWorker(
@@ -109,6 +145,17 @@ async def lifespan(app: FastAPI):
     )
     app_state.prediction_worker.start()
 
+    # D. Start Learning Worker (Self-Improvement Loop)
+    from backend.application.services.learning_worker import LearningWorker
+    
+    # We use the training service as the ITrainer implementation
+    app_state.learning_worker = LearningWorker(
+        interval_seconds=60, # Check for retraining every minute
+        trainer=app_state.training_service,
+        model_factory=model_factory
+    )
+    app_state.learning_worker.start()
+
     print("\n" + "=" * 80)
     print("✅ APPLICATION READY!")
     print("=" * 80)
@@ -117,9 +164,15 @@ async def lifespan(app: FastAPI):
 
     # ========== SHUTDOWN ==========
     print("\n🛑 Shutting down...")
+    
     if app_state.prediction_worker:
         app_state.prediction_worker.stop()
+        
+    if hasattr(app_state, 'learning_worker') and app_state.learning_worker:
+        app_state.learning_worker.stop()
+        
     db_session.close()
+    ThreadLocalSession.remove() # Clean up thread-local sessions
     print("✅ Shutdown complete")
 
 

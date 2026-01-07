@@ -111,7 +111,32 @@ class AgentPrediction(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reviewed_at = Column(DateTime, nullable=True)
 
+
     daily_log = relationship("DailyLog", back_populates="agent_predictions")
+
+
+class SystemSettings(Base):
+    __tablename__ = 'system_settings'
+
+    id = Column(Integer, primary_key=True, default=1)
+    new_samples_count = Column(Integer, default=0, nullable=False)
+    retrain_threshold = Column(Integer, default=100, nullable=False)
+    auto_retrain_enabled = Column(Boolean, default=True, nullable=False)
+    last_retrain_at = Column(DateTime, nullable=True)
+    retrain_count = Column(Integer, default=0, nullable=False)
+
+
+class ModelVersion(Base):
+    __tablename__ = 'model_versions'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    version_number = Column(String(50), nullable=False, unique=True)
+    training_mode = Column(String(50), nullable=False)
+    dataset_size = Column(Integer, nullable=False)
+    accuracy = Column(Float, nullable=True)
+    model_file_path = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 
 
 # ==================== UTILITIES ====================

@@ -9,6 +9,7 @@ from backend.domain.repositories_interfaces.employee_repository_interface import
 from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
+from backend.infrastructure.persistence.repositories.system_settings_repository import SystemSettingsRepository
 from backend.application.helpers.agent_policy_helper import AgentPolicyHelper
 from backend.application.services.email_notification_service import EmailNotificationService
 from backend.application.services.email_service import EmailService, EmailConfig
@@ -21,14 +22,16 @@ class ReviewService:
             prediction_repository: AgentPredictionRepositoryInterface,
             daily_log_repository: DailyLogRepositoryInterface,
             employee_repository: EmployeeRepositoryInterface,
-            policy_helper,  # Added: Needed for streak thresholds and history
-            notification_service  # Added: Needed to send the deferred alerts
+            policy_helper,
+            notification_service,
+            settings_repository: SystemSettingsRepository  # Added dependency
     ):
         self.prediction_repo = prediction_repository
         self.log_repo = daily_log_repository
         self.employee_repo = employee_repository
         self.policy_helper = policy_helper
         self.notification_service = notification_service
+        self.settings_repo = settings_repository
 
     # ========== RETRIEVAL METHODS ==========
 
@@ -81,9 +84,9 @@ class ReviewService:
 
         # 3. Update Daily Log status
         daily_log.status = DailyLogStatus.REVIEWED
-        daily_log.processed_at = datetime.utcnow()  # Mark when the loop finally closed
+        daily_log.processed_at = datetime.utcnow()
 
-        # 4. Handle Defered "Act" Logic (The part the Runner skipped)
+        # 4. Handle Defered "Act" Logic
         if is_correct:
             prediction_type = prediction.prediction_type
 
@@ -92,7 +95,6 @@ class ReviewService:
                 employee.high_burnout_streak += 1
                 current_streak = employee.high_burnout_streak
 
-                # Check if we should now send the alert that was on hold
                 if self.policy_helper.should_send_critical_alert(current_streak):
                     recent_history = self.policy_helper.get_recent_history(employee.id, days=current_streak)
 
@@ -112,27 +114,28 @@ class ReviewService:
                     employee_id=employee.id,
                     employee_name=f"Employee {employee.id}",
                     current_prediction=prediction,
-                    recent_predictions=[],  # Instant alert has no combined history
+                    recent_predictions=[],
                     streak=1,
                     log_date=daily_log.log_date
                 )
                 employee.last_alert_sent = datetime.utcnow()
 
-            # CASE C: RECOVERY (Normal/Medium)
+            # CASE C: RECOVERY
             else:
-                # If HR confirms the user is fine, we reset the streak
                 if employee.high_burnout_streak > 0:
                     employee.high_burnout_streak = 0
                     print(f"✅ Recovery confirmed. Streak reset for Employee {employee.id}")
 
         else:
-            # 5. Handle AI Mistake
-            # We skip streak increments. The streak stays exactly where it was.
             print(f"❌ HR marked prediction as FALSE. Data preserved for training.")
 
-        # 6. Persist all changes
+        # 5. Persist all changes
         self.employee_repo.update(employee)
         self.log_repo.update(daily_log)
+        
+        # 6. Increment Learning Counter (Feedback Loop Connection)
+        self.settings_repo.increment_samples(1)
+        
         return self.prediction_repo.update(prediction)
 
     # ========== DATA PREP FOR LEARNING ==========
@@ -159,6 +162,7 @@ def get_review_service(db: Session) -> ReviewService:
     prediction_repository = AgentPredictionRepository(db)
     daily_log_repository = DailyLogRepository(db)
     employee_repository = EmployeeRepository(db)
+    settings_repository = SystemSettingsRepository(db)
 
     policy_helper = AgentPolicyHelper(
         daily_log_repository=daily_log_repository,
@@ -172,5 +176,6 @@ def get_review_service(db: Session) -> ReviewService:
         daily_log_repository=daily_log_repository,
         employee_repository=employee_repository,
         policy_helper=policy_helper,
-        notification_service=notification_service
+        notification_service=notification_service,
+        settings_repository=settings_repository
     )

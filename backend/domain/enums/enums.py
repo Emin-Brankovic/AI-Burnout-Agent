@@ -211,9 +211,17 @@ class NotificationChannel(str, Enum):
     SLACK = "slack"
     TEAMS = "teams"
     SMS = "sms"
+
     IN_APP = "in_app"
 
 
+class TrainingDecision(str, Enum):
+    """
+    Detailed decision outcomes for the Learning Agent.
+    """
+    SKIP = "skip"
+    INCREMENTAL_TRAINING = "incremental_training"  # < 500 new samples
+    FULL_RETRAINING = "full_retraining"  # >= 500 new samples
 
 # ============================================================================
 # Testing & Validation

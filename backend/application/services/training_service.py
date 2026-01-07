@@ -28,17 +28,14 @@ from backend.infrastructure.persistence.database import SessionLocal
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
 
-class ModelTrainingService:
+from backend.domain.interfaces.trainer_interface import ITrainer
+from backend.domain.enums.enums import TrainingMode
+from backend.domain.entities.system_settings import SystemSettingsEntity
+
+class ModelTrainingService(ITrainer):
     """
     Service for training and evaluating burnout prediction models.
-
-    Responsibilities:
-    - Load historical data
-    - Split into train/validation sets
-    - Train model using predictor
-    - Evaluate model performance
-    - Save model artifacts and metrics
-    - Version control for models
+    Implements ITrainer to plug into the Learning Worker.
     """
 
     def __init__(
@@ -50,12 +47,6 @@ class ModelTrainingService:
     ):
         """
         Initialize training service.
-
-        Args:
-            predictor: Burnout predictor implementation
-            daily_log_repository: Repository for accessing daily logs (optional)
-            data_path: Path to CSV with historical data
-            models_dir: Directory for saving models
         """
         self.predictor = predictor
         self.repository = daily_log_repository
@@ -157,7 +148,45 @@ class ModelTrainingService:
 
         return str(model_path), final_metrics
 
-    # def evaluate_model(
+    def retrain(
+        self, 
+        mode: TrainingMode, 
+        dataset_reference: str, 
+        settings: SystemSettingsEntity
+    ) -> Dict[str, Any]:
+        """
+        Execute model retraining via ITrainer interface.
+        """
+        import asyncio
+        
+        # Update internal data path to point to the new dataset from Formatter
+        self.data_path = Path(dataset_reference)
+        
+        # Generate version string
+        version_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        model_name = f"burnout_model_{version_id}"
+        
+        # Run async training synchronously
+        log_message = ""
+        try:
+            # Reusing existing train_model logic which handles loading from self.data_path
+            model_path, metrics = asyncio.run(self.train_model(model_name=model_name))
+            
+            return {
+                "success": True,
+                "model_version": version_id,
+                "model_path": model_path,
+                "metrics": {
+                    "train_r2_score": metrics.train_r2_score,
+                    "test_r2_score": metrics.test_r2_score,
+                    "train_samples": metrics.train_samples
+                }
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
     #         self,
     # ) -> EvaluationMetrics:
     #     """
