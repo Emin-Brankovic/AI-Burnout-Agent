@@ -87,3 +87,21 @@ class DailyLogResponse(BaseModel):
                 "burnout_rate": 0.13
             }
         }
+class DailyLogWithPredictionResponse(DailyLogResponse):
+    """DTO for daily log with associated prediction."""
+    prediction_type: Optional[str] = Field(None, description="Prediction Type")
+    prediction_value: Optional[float] = Field(None, description="Prediction Value")
+    confidence_score: Optional[float] = Field(None, description="Confidence Score")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "employee_id": 1,
+                # ... inherit other fields ...
+                "prediction_type": "HIGH",
+                "prediction_value": 0.85,
+                "confidence_score": 0.92
+            }
+        }

@@ -17,8 +17,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { StatusCard } from './status-card/status-card';
 import { PredictionTable } from './prediction-table/prediction-table';
 import { EmployeeForm } from './employee-form/employee-form';
+import { Reviews } from './reviews/reviews';
 import { MatSlider, MatSliderThumb } from '@angular/material/slider';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { ReviewModal } from './review-modal/review-modal';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @NgModule({
   declarations: [
@@ -26,7 +32,9 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     Header,
     StatusCard,
     PredictionTable,
-    EmployeeForm
+    EmployeeForm,
+    Reviews,
+    ReviewModal
   ],
   imports: [
     CommonModule,
@@ -44,6 +52,10 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     MatSlider,
     MatSliderThumb,
     MatProgressSpinner,
+    MatDialogModule,
+    MatInputModule,
+    MatDividerModule,
+    MatButtonToggleModule
   ]
 })
 export class HrModule { }

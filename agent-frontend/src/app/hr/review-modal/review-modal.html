@@ -1,0 +1,96 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon color="primary">fact_check</mat-icon>
+  Review AI Prediction #{{data.id}}
+</h2>
+
+<mat-dialog-content class="mat-typography">
+
+  <mat-divider class="my-6"></mat-divider>
+
+  <section class="history-logs mb-6">
+    <h3 class="text-sm font-semibold uppercase text-slate-500 mb-3">Past 7 Logs History</h3>
+
+    <div class="border rounded-lg overflow-hidden">
+      <table mat-table [dataSource]="historyData()" class="w-full">
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs"> Date </th>
+          <td mat-cell *matCellDef="let log" class="text-xs"> {{log.created_at | date:'dd-MM-yyyy'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="work_hours">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center"> Hours </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.work_hours}}h </td>
+        </ng-container>
+
+        <ng-container matColumnDef="risk_level">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs"> Risk </th>
+          <td mat-cell *matCellDef="let log">
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold" [ngClass]="{
+                  'bg-red-100 text-red-700': log.predicted_risk === 'HIGH',
+                  'bg-yellow-100 text-yellow-700': log.predicted_risk === 'MEDIUM',
+                  'bg-green-100 text-green-700': log.predicted_risk === 'LOW'
+                }">
+              {{log.predicted_risk}}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="confidence">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-right"> Conf. </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-right">
+            {{log.confidence}}%
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="stress">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center"> Stress </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.stress}}/10 </td>
+        </ng-container>
+
+        <ng-container matColumnDef="motivation">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center"> Motivation </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.motivation}}/10 </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <div *ngIf="historyData().length === 0" class="p-4 text-center text-sm text-slate-400">
+        No recent logs found for this employee.
+      </div>
+    </div>
+  </section>
+
+
+  <mat-divider class="mb-6"></mat-divider>
+  <form [formGroup]="reviewForm" class="review-form">
+    <h3 class="text-sm font-semibold uppercase text-slate-500">Your Validation</h3>
+
+    <div class="validation-question-row">
+      <label>Was the AI Prediction accurate?</label>
+      <mat-button-toggle-group formControlName="is_correct" class="accuracy-toggle-group">
+        <mat-button-toggle [value]="true" class="toggle-correct">
+          Correct
+        </mat-button-toggle>
+        <mat-button-toggle [value]="false" class="toggle-incorrect">
+          Incorrect
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>HR Notes</mat-label>
+      <textarea matInput formControlName="hr_notes" placeholder="Enter feedback here..."></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="p-4 bg-slate-50">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="onConfirm()" [disabled]="reviewForm.invalid">
+    <mat-icon>check_circle</mat-icon>
+    Confirm Review
+  </button>
+</mat-dialog-actions>

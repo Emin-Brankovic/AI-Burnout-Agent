@@ -17,12 +17,22 @@ class ReviewSubmitRequest(BaseModel):
             }
         }
 
+class HistoricalRecord(BaseModel):
+    """DTO for a single day of history."""
+    log_date: datetime
+    hours_worked: float
+    stress_level: int
+    prediction_type: Optional[str] = None
+    prediction_value: Optional[float] = None
+    confidence_score: Optional[float] = None
+
 class ReviewDetailsResponse(BaseModel):
     """DTO for review details context."""
     prediction: AgentPredictionResponse
     log_data: DailyLogResponse
     confidence_score: float
     ai_prediction_type: str
+    history: List[HistoricalRecord] = []
 
     class Config:
         from_attributes = True

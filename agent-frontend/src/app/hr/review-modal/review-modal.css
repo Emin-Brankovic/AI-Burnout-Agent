@@ -1,0 +1,148 @@
+/* Header Styling */
+.mat-mdc-dialog-title {
+  padding: 24px 32px 10px 32px !important;
+  font-size: 1.5rem !important;
+  font-weight: 700;
+  color: #1e293b;
+display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mat-mdc-dialog-content {
+  padding: 32px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* History Table Styling */
+.history-logs {
+  .border {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-table {
+    background: transparent;
+  }
+
+  .mat-mdc-header-cell {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+  }
+
+  .mat-mdc-cell {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+}
+
+/* Validation Form Layout (Fixing image_4eb0dd.png) */
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .validation-question-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    label {
+      font-weight: 500;
+      color: #475569;
+    }
+  }
+
+  /* Full width for the notes field */
+  mat-form-field {
+    width: 100%;
+
+    textarea {
+      min-height: 100px;
+    }
+  }
+}
+
+/* Toggle Group Customization */
+mat-button-toggle-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: none;
+  height: 40px;
+}
+
+mat-button-toggle {
+  background-color: white;
+  color: #64748b;
+  padding: 0 12px;
+
+  &.mat-button-toggle-checked {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-weight: 600;
+  }
+}
+
+/* Action Buttons */
+.mat-mdc-dialog-actions {
+  padding: 16px 32px 24px 32px !important;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  gap: 12px;
+
+  button {
+    border-radius: 8px;
+    padding: 0 24px;
+    height: 44px;
+    font-weight: 600;
+  }
+}
+
+/* Toggle Group Container */
+.accuracy-toggle-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 40px;
+  box-shadow: none;
+}
+
+/* Base style for both buttons */
+mat-button-toggle {
+  width: 120px;
+  background-color: white;
+  color: #64748b;
+  transition: all 0.2s ease;
+
+  /* Correct Button - Checked State */
+  &.toggle-correct.mat-button-toggle-checked {
+    background-color: #83dc87 !important;
+    color: white !important;
+  }
+
+  /* Incorrect Button - Checked State */
+  &.toggle-incorrect.mat-button-toggle-checked {
+    background-color: #ef4444 !important;
+  color: white !important;
+  }
+}
+
+/* Remove the default Material checkmark icon that appears on click */
+::ng-deep .mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+  padding: 0 16px !important;
+}
+
+/* Ensure no internal ripple or checkmark affects the layout */
+::ng-deep .mat-pseudo-checkbox {
+  display: none !important;
+}
