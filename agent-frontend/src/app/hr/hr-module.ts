@@ -28,6 +28,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { EmployeeDailyLogs } from './employee-daily-logs/employee-daily-logs';
 
 @NgModule({
   declarations: [
@@ -38,7 +39,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     EmployeeForm,
     Reviews,
     ReviewModal,
-    DailyLogsEntryComponent
+    DailyLogsEntryComponent,
+    EmployeeDailyLogs,
   ],
   imports: [
     CommonModule,

@@ -8,7 +8,7 @@ import { HttpClient } from '@angular/common/http';
   styleUrl: './prediction-table.css',
 })
 export class PredictionTable implements OnInit {
-  displayedColumns: string[] = ['employee', 'department', 'riskScore', 'status', 'trend', 'feedback'];
+  displayedColumns: string[] = ['employee', 'department', 'riskScore', 'status', 'trend'];
   dataSource: EmployeeData[] = [];
 
   @Input() set predictions(data: any[]) {

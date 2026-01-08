@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import datetime
 import traceback
 
@@ -202,13 +202,43 @@ def calculate_rate_helper(item: dict) -> float:
     return min(val, 1.0)  # Cap at 1.0 just in case logic evolves
 
 
-def get_logs_by_employee(employee_id: int, db: Session = Depends(get_db)):
-    """Get all logs for a specific employee."""
+@router.get("/employee/{employee_id}", response_model=PagedResult[DailyLogResponse] if False else Any) # Actually let's just return list for now or PagedResult? The prompt asks for server side pagination.
+# The dashboard uses: GET /api/dashboard/?page=... which returns { items: [], total: ... }
+# The get_all_daily_logs returns List. It does NOT return total count in the header or body for paged result. 
+# BaseService.get_all returns PagedResult but the route returns List[DailyLogResponse].
+# Wait, look at get_all_daily_logs in routes:
+#         result = service.get_all(search)
+#         return [ ... for entity in result.items ]
+# It returns ONLY the items. So the frontend doesn't know the total count?
+# If so, the frontend MatPaginator won't work correctly (it needs length).
+# Let's look at Dashboard logic again.
+# this.http.get(`http://localhost:8000/api/dashboard/?${params}`).subscribe(... this.totalItems = data.total; ...)
+# So DASHBOARD API returns a special structure.
+# get_all_daily_logs returns a LIST. This means standard get_all_daily_logs api is NOT fully supporting pagination metadata.
+
+# I will create a new endpoint that returns PagedResult structure (items, total, page, page_size) to support the UI requirements properly.
+
+@router.get("/employee/{employee_id}", response_model=dict)
+def get_logs_by_employee(
+    employee_id: int, 
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Get all logs for a specific employee with pagination."""
     try:
         service = DailyLogService(db)
-        entities = service.get_by_employee(employee_id)
+        # Fetch all for employee
+        all_entities = service.get_by_employee(employee_id)
+        
+        # Calculate pagination
+        total_count = len(all_entities)
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        sliced_entities = all_entities[start:end]
 
-        return [
+        items = [
             DailyLogResponse(
                 id=entity.id,
                 employee_id=entity.employee_id,
@@ -223,8 +253,16 @@ def get_logs_by_employee(employee_id: int, db: Session = Depends(get_db)):
                 burnout_risk=entity.calculate_burnout_risk(),
                 burnout_rate=entity.calculate_burnout_rate()
             )
-            for entity in entities
+            for entity in sliced_entities
         ]
+        
+        return {
+            "items": items,
+            "total": total_count,
+            "page": page,
+            "page_size": page_size
+        }
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
