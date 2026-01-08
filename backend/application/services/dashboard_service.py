@@ -109,9 +109,9 @@ class DashboardService:
             emp_status = emp_data["status"]
             risk_score = emp_data["risk_score"]
             
-            if emp_status == BurnoutRiskLevel.CRITICAL:
+            if emp_status.lower() == BurnoutRiskLevel.CRITICAL:
                 critical_count += 1
-            elif emp_status in [BurnoutRiskLevel.HIGH, BurnoutRiskLevel.MEDIUM]:
+            elif emp_status.lower() in [BurnoutRiskLevel.HIGH, BurnoutRiskLevel.MEDIUM]:
                 monitor_count += 1
             else:
                 stable_count += 1

@@ -1,9 +1,11 @@
 from datetime import datetime
 import traceback
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
+
+from backend.application.services.training_service import ModelTrainingService
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.application.services.prediction_service import get_prediction_service
 from backend.domain.entities.daily_log import DailyLogEntity
@@ -18,6 +20,8 @@ from backend.presentation.schemas.agent_prediction_schemas import (
     AgentPredictionUpdateRequest,
     AgentPredictionResponse
 )
+
+from backend.ML.burnout_predictor import BurnoutPredictor
 
 router = APIRouter(prefix="/predictions", tags=["Agent Predictions"])
 
@@ -110,7 +114,7 @@ def create_prediction(
     """Create a new prediction."""
     try:
         service = AgentPredictionService(db)
-        entity = service.create(request)
+        entity = service.create(request.dict())
 
         return AgentPredictionResponse(
             id=entity.id,
@@ -280,3 +284,44 @@ def delete_prediction(prediction_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post("/train", status_code=status.HTTP_200_OK)
+async def manual_train(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Trigger manual model retraining.
+    
+    Delegates the full retraining workflow to ModelTrainingService.
+    """
+    try:
+        # Initialize dependencies
+        log_repo = DailyLogRepository(db)
+        employee_repo = EmployeeRepository(db)
+        
+        # Initialize Predictor and Service (injecting repositories)
+        predictor = BurnoutPredictor(daily_log_repo=log_repo, employee_repo=employee_repo)
+        
+        training_service = ModelTrainingService(
+            predictor=predictor,
+            daily_log_repository=log_repo
+        )
+        
+        # Execute Pipeline
+        return await training_service.execute_manual_training_pipeline(db)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Training pipeline failed",
+                "error": str(e),
+                "trace": tb
+            }
+        )

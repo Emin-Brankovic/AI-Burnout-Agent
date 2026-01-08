@@ -28,15 +28,15 @@ class AgentPolicyHelper:
             return True
 
         # Rule 1: CRITICAL risk always needs review
-        if prediction_type == BurnoutRiskLevel.CRITICAL:
+        if prediction_type.lower() == BurnoutRiskLevel.CRITICAL:
             return True
 
         # Rule 2: HIGH risk with low confidence (< 0.75)
-        if prediction_type == BurnoutRiskLevel.HIGH:
+        if prediction_type.lower() == BurnoutRiskLevel.HIGH:
             return confidence < 0.75
 
         # Rule 3: MEDIUM risk with low confidence (< 0.70)
-        if prediction_type == BurnoutRiskLevel.MEDIUM:
+        if prediction_type.lower() == BurnoutRiskLevel.MEDIUM:
             return confidence < 0.70
 
         # Rule 4: General confidence threshold

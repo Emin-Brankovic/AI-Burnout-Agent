@@ -1,0 +1,132 @@
+.container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-section {
+    margin-bottom: 24px;
+}
+
+.header-section h1 {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0;
+    font-size: 14px;
+}
+
+.control-card {
+    margin-bottom: 24px;
+    border-radius: 8px;
+}
+
+.control-content {
+    padding: 16px !important;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.size-select {
+    width: 200px;
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+}
+
+.loading-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    color: #666;
+    font-size: 14px;
+}
+
+.table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+table {
+    width: 100%;
+}
+
+.risk-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.risk-badge.low {
+    background-color: #e6f4ea;
+    color: #1e8e3e;
+}
+
+.risk-badge.medium {
+    background-color: #ffe0b2;
+    color: #f57c00;
+}
+
+.risk-badge.high {
+    background-color: #fce8e6;
+    color: #d93025;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.badge.low {
+    color: #1e8e3e;
+}
+
+.badge.medium {
+    color: #f57c00;
+}
+
+.badge.high {
+    color: #d93025;
+}
+
+.status-chip {
+    background-color: #f1f3f4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #5f6368;
+    text-transform: capitalize;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 64px 0;
+    color: #9aa0a6;
+}
+
+.empty-state mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin: 0;
+}

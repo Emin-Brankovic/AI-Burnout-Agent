@@ -11,7 +11,11 @@ from backend.presentation.schemas.daily_log_schemas import (
     DailyLogCreateRequest,
     DailyLogUpdateRequest,
     DailyLogResponse,
-    DailyLogWithPredictionResponse
+    DailyLogWithPredictionResponse,
+    BatchEnqueueRequest,
+    BatchEnqueueResponse,
+    GenerateLogsRequest,
+    GenerateLogsResponse
 )
 
 router = APIRouter(prefix="/daily-logs", tags=["Daily Logs"])
@@ -255,6 +259,138 @@ def get_logs_by_date_range(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+#ovo treba izbrisati
+@router.post("/batch-enqueue", response_model=BatchEnqueueResponse, status_code=status.HTTP_200_OK)
+def batch_enqueue_for_prediction(
+        request: BatchEnqueueRequest,
+        db: Session = Depends(get_db)
+):
+    """
+    Batch enqueue daily logs for prediction processing.
+    
+    This endpoint:
+    - Selects a random sample of daily logs that are eligible for prediction
+    - Eligible logs are those NOT already in QUEUED or PROCESSING status
+    - Updates their status to QUEUED atomically
+    - Returns the full details of all enqueued logs
+    
+    The operation is atomic - either all logs are enqueued or none are.
+    """
+    try:
+        service = DailyLogService(db)
+        
+        # Perform batch enqueue
+        enqueued_logs, requested_count = service.batch_enqueue_for_prediction(request.batch_size)
+        
+        # Convert entities to response DTOs
+        response_logs = [
+            DailyLogResponse(
+                id=entity.id,
+                employee_id=entity.employee_id,
+                log_date=entity.log_date,
+                hours_worked=entity.hours_worked,
+                hours_slept=entity.hours_slept,
+                daily_personal_time=entity.daily_personal_time,
+                motivation_level=entity.motivation_level,
+                stress_level=entity.stress_level,
+                workload_intensity=entity.workload_intensity,
+                overtime_hours_today=entity.overtime_hours_today,
+                burnout_risk=entity.calculate_burnout_risk(),
+                burnout_rate=entity.calculate_burnout_rate(),
+                status=entity.status.value if hasattr(entity.status, 'value') else entity.status,
+                processed_at=entity.processed_at
+            )
+            for entity in enqueued_logs
+        ]
+        
+        return BatchEnqueueResponse(
+            enqueued_count=len(enqueued_logs),
+            requested_count=requested_count,
+            enqueued_logs=response_logs
+        )
+        
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Batch enqueue failed: {tb}"
+        )
+
+
+@router.post("/generate-random", response_model=GenerateLogsResponse, status_code=status.HTTP_201_CREATED)
+def generate_random_logs(
+        request: GenerateLogsRequest,
+        db: Session = Depends(get_db)
+):
+    """
+    Generate random daily logs with realistic values and enqueue for prediction.
+    
+    This endpoint:
+    - Generates the specified number of daily logs with random but realistic values
+    - Randomly assigns logs to existing employees
+    - Uses weighted distributions for realistic data patterns
+    - Automatically sets status to QUEUED for prediction processing
+    - Returns full details of all generated logs
+    
+    Value Ranges:
+    - hours_worked: 6-12 hours (weighted toward 8)
+    - hours_slept: 4-9 hours (weighted toward 7)
+    - daily_personal_time: 0-4 hours (weighted toward 1.5)
+    - motivation_level: 1-10 (weighted toward middle values)
+    - stress_level: 1-10 (weighted toward middle-high values)
+    - workload_intensity: 1-10 (weighted toward middle-high values)
+    - overtime_hours_today: 0-4 hours (weighted toward 0.5)
+    - log_date: Random date within last 90 days
+    """
+    try:
+        service = DailyLogService(db)
+        
+        # Generate random logs
+        generated_logs, requested_count = service.generate_random_logs(request.batch_size)
+        
+        # Convert entities to response DTOs
+        response_logs = [
+            DailyLogResponse(
+                id=entity.id,
+                employee_id=entity.employee_id,
+                log_date=entity.log_date,
+                hours_worked=entity.hours_worked,
+                hours_slept=entity.hours_slept,
+                daily_personal_time=entity.daily_personal_time,
+                motivation_level=entity.motivation_level,
+                stress_level=entity.stress_level,
+                workload_intensity=entity.workload_intensity,
+                overtime_hours_today=entity.overtime_hours_today,
+                burnout_risk=entity.calculate_burnout_risk(),
+                burnout_rate=entity.calculate_burnout_rate(),
+                status=entity.status.value if hasattr(entity.status, 'value') else entity.status,
+                processed_at=entity.processed_at
+            )
+            for entity in generated_logs
+        ]
+        
+        return GenerateLogsResponse(
+            generated_count=len(generated_logs),
+            requested_count=requested_count,
+            generated_logs=response_logs
+        )
+        
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Random log generation failed: {tb}"
+        )
+
+
 
 @router.put("/{log_id}", response_model=DailyLogResponse)
 def update_daily_log(
@@ -295,3 +431,4 @@ def delete_daily_log(log_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+

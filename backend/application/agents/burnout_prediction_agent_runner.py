@@ -203,16 +203,15 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
                 print(f"       📧 CRITICAL alert sent instantly")
         
         # Email Type 1b: HIGH alert (sa historijom i streak logikom)
-        elif prediction.prediction_type == BurnoutRiskLevel.HIGH:
+        elif prediction.prediction_type.lower() == BurnoutRiskLevel.HIGH:
             if employee:
                 # Increment streak from database
                 employee.high_burnout_streak = streak + 1
                 streak = employee.high_burnout_streak
                 self._predictor.employee_repository.update(employee)
 
-                print(f"       ⚠️  HIGH streak: {streak} days")
 
-                if self.policy_helper.should_send_critical_alert(employee_id, streak):
+                if self.policy_helper.should_send_critical_alert(streak):
                     # ✅ Dohvati prethodne predikcije za historiju
                     recent_predictions = self.policy_helper.get_recent_history(employee_id, days=streak)
 

@@ -193,3 +193,57 @@ class DailyLogRepository(DailyLogRepositoryInterface):
             "reviewed": self.count_by_status(DailyLogStatus.REVIEWED),
             "failed": self.count_by_status(DailyLogStatus.FAILED)
         }
+
+    def add_many(self, entities: List[DailyLogEntity]) -> List[DailyLogEntity]:
+        """Add multiple daily logs to repository in batch."""
+        try:
+            # Convert all entities to models
+            models = [daily_log_entity_to_model(entity) for entity in entities]
+            
+            # Add all to session
+            self.session.add_all(models)
+            self.session.flush()
+            # We don't commit here to allow the service layer to control the transaction
+            
+            # Update IDs on entities and identity map
+            for entity, model in zip(entities, models):
+                entity.id = model.id
+                self._identity_map[entity.id] = entity
+                
+            return entities
+        except Exception as e:
+            self.session.rollback()
+            raise e
+#I ovo treba izbrisati
+    def get_random_eligible_for_prediction(self, limit: int) -> List[DailyLogEntity]:
+        """
+        Get random daily logs eligible for prediction.
+        
+        Eligible logs are those NOT in QUEUED, PROCESSING, or ANALYZED status.
+        This prevents duplicate processing.
+        
+        Args:
+            limit: Maximum number of logs to return
+            
+        Returns:
+            List of eligible DailyLogEntity objects
+        """
+        from sqlalchemy import func as sql_func
+        
+        # Get logs that are NOT already queued or being processed
+        # We want logs that haven't been analyzed yet or failed
+        excluded_statuses = [
+            DailyLogStatus.QUEUED.value,
+            DailyLogStatus.PROCESSING.value,
+        ]
+        
+        models = (
+            self.session.query(DailyLog)
+            .filter(~DailyLog.status.in_(excluded_statuses))
+            .order_by(sql_func.random())
+            .limit(limit)
+            .all()
+        )
+        
+        return [daily_log_model_to_entity(model) for model in models]
+

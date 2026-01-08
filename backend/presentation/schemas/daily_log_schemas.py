@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -105,3 +105,60 @@ class DailyLogWithPredictionResponse(DailyLogResponse):
                 "confidence_score": 0.92
             }
         }
+
+#Ovo je ono sto uzme iz baze pa treba obrisati
+class BatchEnqueueRequest(BaseModel):
+    """DTO for batch enqueueing daily logs for prediction."""
+    batch_size: int = Field(..., ge=1, le=1000, description="Number of daily logs to enqueue (1-1000)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "batch_size": 50
+            }
+        }
+
+#Ovo je ono sto uzme iz baze pa treba obrisati
+class BatchEnqueueResponse(BaseModel):
+    """DTO for batch enqueue operation response."""
+    enqueued_count: int = Field(..., description="Number of logs successfully enqueued")
+    requested_count: int = Field(..., description="Number of logs requested")
+    enqueued_logs: List[DailyLogResponse] = Field(..., description="Details of enqueued logs")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "enqueued_count": 50,
+                "requested_count": 50,
+                "enqueued_logs": []
+            }
+        }
+
+#Ovo dvoje je okay
+class GenerateLogsRequest(BaseModel):
+    """DTO for generating random daily logs."""
+    batch_size: int = Field(..., ge=1, le=1000, description="Number of random daily logs to generate (1-1000)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "batch_size": 20
+            }
+        }
+
+
+class GenerateLogsResponse(BaseModel):
+    """DTO for generate logs operation response."""
+    generated_count: int = Field(..., description="Number of logs successfully generated")
+    requested_count: int = Field(..., description="Number of logs requested")
+    generated_logs: List[DailyLogResponse] = Field(..., description="Details of generated logs")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "generated_count": 20,
+                "requested_count": 20,
+                "generated_logs": []
+            }
+        }
+

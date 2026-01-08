@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
 
     print("=" * 80)
-    print("🚀 BURNOUT DETECTION SYSTEM STARTING")
+    print("BURNOUT DETECTION SYSTEM STARTING")
     print("=" * 80)
 
     # ========== 1 & 2: DATABASE & ML INITIALIZATION ==========
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
         app_state.training_service.predictor.load_model(MODEL_PATH)
 
     # ========== 4/6: SERVICES INITIALIZATION ==========
-    print("\n⚙️  Step 4: Creating services...")
+    print("\nStep 4: Creating services...")
     # Creating fresh database sessions for thread safety in workers
     db_session = app_state.db_session_factory()
     
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
 
 
     # ========== 5/6: AGENT RUNNERS ==========
-    print("\n🤖 Step 5: Creating agent runners...")
+    print("\nStep 5: Creating agent runners...")
     # The "Runner" contains the Sense-Think-Act logic
     from backend.application.agents.burnout_prediction_agent_runner import BurnoutPredictionAgentRunner
     
@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
     )
 
     # ========== 6/6: BACKGROUND WORKERS ==========
-    print("\n🔄 Step 6: Starting background workers...")
+    print("\nStep 6: Starting background workers...")
     
     # A. Scoped Session Factory for Thread-Safe Singleton Access
     from sqlalchemy.orm import scoped_session
@@ -128,12 +128,12 @@ async def lifespan(app: FastAPI):
     from backend.application.services.model_registry import ModelRegistry
     registry = ModelRegistry()
     if not registry.active_model:
-        print("   🏗️ Loading initial model into Registry...")
+        print("   Loading initial model into Registry...")
         try:
             initial_model = model_factory()
             registry.load_new_model(initial_model)
         except Exception as e:
-             print(f"   ⚠️ Failed to load initial model: {e}")
+             print(f"   Failed to load initial model: {e}")
 
     # C. Start Prediction Worker (Queue Processor)
     from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker
@@ -157,13 +157,13 @@ async def lifespan(app: FastAPI):
     app_state.learning_worker.start()
 
     print("\n" + "=" * 80)
-    print("✅ APPLICATION READY!")
+    print("APPLICATION READY!")
     print("=" * 80)
 
     yield  # --- Application is running ---
 
     # ========== SHUTDOWN ==========
-    print("\n🛑 Shutting down...")
+    print("\nShutting down...")
     
     if app_state.prediction_worker:
         app_state.prediction_worker.stop()
@@ -173,7 +173,7 @@ async def lifespan(app: FastAPI):
         
     db_session.close()
     ThreadLocalSession.remove() # Clean up thread-local sessions
-    print("✅ Shutdown complete")
+    print("Shutdown complete")
 
 
 app = FastAPI(

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.application.services.base_crud_service import BaseCRUDService
 from backend.domain.entities.daily_log import DailyLogEntity
+from backend.domain.enums.enums import DailyLogStatus
 from backend.domain.repositories_interfaces.daily_log_repository_interface import DailyLogRepositoryInterface
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
@@ -118,3 +119,165 @@ class DailyLogService(BaseCRUDService[
             result.append(log_dict)
 
         return result
+# Ovo je legit
+    def batch_enqueue_for_prediction(self, batch_size: int) -> tuple[List[DailyLogEntity], int]:
+        """
+        Batch enqueue daily logs for prediction processing.
+        
+        This method:
+        1. Queries for random eligible logs (not already queued/processing)
+        2. Updates their status to QUEUED atomically
+        3. Returns the enqueued logs
+        
+        Args:
+            batch_size: Number of logs to enqueue
+            
+        Returns:
+            Tuple of (list of enqueued entities, requested count)
+            
+        Raises:
+            ValueError: If batch_size is invalid
+            Exception: If database operation fails
+        """
+        if batch_size <= 0:
+            raise ValueError("batch_size must be greater than 0")
+        
+        try:
+            # Get random eligible logs
+            eligible_logs = self.repository.get_random_eligible_for_prediction(batch_size)
+            
+            if not eligible_logs:
+                # No eligible logs available
+                return [], batch_size
+            
+            # Update status to QUEUED for all selected logs atomically
+            enqueued_logs = []
+            for log in eligible_logs:
+                log.status = DailyLogStatus.QUEUED
+                updated_log = self.repository.update(log)
+                enqueued_logs.append(updated_log)
+            
+            # Commit happens in repository.update, but we're in a transaction context
+            self.session.commit()
+            
+            print(f"✅ Batch enqueued {len(enqueued_logs)} daily logs for prediction")
+            
+            return enqueued_logs, batch_size
+            
+        except Exception as e:
+            self.session.rollback()
+            print(f"Batch enqueue failed: {e}")
+            raise
+
+    def generate_random_logs(self, batch_size: int) -> tuple[List[DailyLogEntity], int]:
+        """
+        Generate random daily logs with realistic values and enqueue them for prediction.
+        
+        This method:
+        1. Validates batch_size
+        2. Retrieves all employees from database
+        3. Generates random daily logs with constrained values
+        4. Saves them to database with QUEUED status
+        5. Returns the generated logs
+        
+        Args:
+            batch_size: Number of random logs to generate
+            
+        Returns:
+            Tuple of (list of generated entities, requested count)
+            
+        Raises:
+            ValueError: If batch_size is invalid or no employees exist
+            Exception: If database operation fails
+        """
+        import random
+        from datetime import datetime, timedelta
+        from backend.infrastructure.persistence.repositories.employee_repository import EmployeeRepository
+        
+        if batch_size <= 0:
+            raise ValueError("batch_size must be greater than 0")
+        
+        try:
+            # Get all employees to randomly assign logs
+            employee_repo = EmployeeRepository(self.session)
+            all_employees = employee_repo.get_all()
+            
+            if not all_employees:
+                raise ValueError("No employees found in database. Please create employees first.")
+            
+            employee_ids = [emp.id for emp in all_employees]
+            
+            generated_logs = []
+            
+            # Define realistic value ranges for each field
+            for i in range(batch_size):
+                # Random employee
+                employee_id = random.choice(employee_ids)
+                
+                # Random date within last 90 days
+                days_ago = random.randint(0, 90)
+                log_date = datetime.now() - timedelta(days=days_ago)
+                
+                # Generate realistic random values with weighted distributions
+                # Hours worked: mostly 6-10, occasionally more
+                hours_worked = round(random.triangular(6, 12, 8), 1)
+                
+                # Hours slept: mostly 6-8, some less, some more
+                hours_slept = round(random.triangular(4, 9, 7), 1)
+                
+                # Personal time: 0-4 hours
+                daily_personal_time = round(random.triangular(0, 4, 1.5), 1)
+                
+                # Motivation level: 1-10, weighted toward middle
+                motivation_level = random.choices(
+                    range(1, 11),
+                    weights=[5, 8, 12, 15, 20, 20, 15, 12, 8, 5]
+                )[0]
+                
+                # Stress level: 1-10, weighted toward middle-high
+                stress_level = random.choices(
+                    range(1, 11),
+                    weights=[5, 8, 10, 12, 15, 18, 15, 10, 5, 2]
+                )[0]
+                
+                # Workload intensity: 1-10, weighted toward middle-high
+                workload_intensity = random.choices(
+                    range(1, 11),
+                    weights=[5, 8, 10, 12, 15, 18, 15, 10, 5, 2]
+                )[0]
+                
+                # Overtime hours: mostly 0-2, occasionally more
+                overtime_hours_today = round(random.triangular(0, 4, 0.5), 1)
+                
+                # Create entity
+                log_entity = DailyLogEntity(
+                    employee_id=employee_id,
+                    log_date=log_date,
+                    hours_worked=hours_worked,
+                    hours_slept=hours_slept,
+                    daily_personal_time=daily_personal_time,
+                    motivation_level=motivation_level,
+                    stress_level=stress_level,
+                    workload_intensity=workload_intensity,
+                    overtime_hours_today=overtime_hours_today,
+                    status=DailyLogStatus.QUEUED  # Automatically enqueue for prediction
+                )
+                
+                generated_logs.append(log_entity)
+            
+            # Save all to database in batch
+            generated_logs = self.repository.add_many(generated_logs)
+
+            # Commit all at once
+            self.session.commit()
+            
+            print(f"Generated and enqueued {len(generated_logs)} random daily logs")
+            
+            return generated_logs, batch_size
+            
+        except Exception as e:
+            self.session.rollback()
+            print(f"Random log generation failed: {e}")
+            raise
+
+

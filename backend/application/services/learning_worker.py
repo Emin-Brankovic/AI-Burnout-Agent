@@ -1,5 +1,4 @@
 import threading
-import time
 import logging
 from typing import Optional
 from datetime import datetime
@@ -7,15 +6,11 @@ from datetime import datetime
 from backend.domain.enums.enums import TrainingDecision
 from backend.domain.interfaces.trainer_interface import ITrainer
 from backend.application.services.learning_agent_runner import LearningAgentRunner
-from backend.application.services.dataset_formatter_service import DatasetFormatterService
 from backend.application.services.model_registry import ModelRegistry
 from backend.infrastructure.persistence.database import get_db, SessionLocal
 from backend.infrastructure.persistence.repositories.system_settings_repository import SystemSettingsRepository
-from backend.infrastructure.persistence.repositories.agent_prediction_repository import AgentPredictionRepository
-from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.infrastructure.persistence.repositories.model_version_repository import ModelVersionRepository
 from backend.domain.entities.model_version import ModelVersionEntity
-from backend.ML.burnout_predictor_interface import IBurnoutPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -126,16 +121,16 @@ class LearningWorker:
         logger.info(f"🏋️ Starting {decision.value}...")
         
         # Repos needed for formatting & versioning
-        pred_repo = AgentPredictionRepository(db)
-        log_repo = DailyLogRepository(db)
+        # pred_repo = AgentPredictionRepository(db)
+        # log_repo = DailyLogRepository(db)
         version_repo = ModelVersionRepository(db)
         model_registry = ModelRegistry()
 
         # A. Format Dataset
-        formatter = DatasetFormatterService(pred_repo, log_repo)
-        dataset_paths = formatter.generate_dataset()
-        logger.info(f"   📂 Dataset ready: {dataset_paths['train_file']}")
-
+        # formatter = DatasetFormatterService(pred_repo, log_repo)
+        # dataset_paths = formatter.generate_dataset()
+        #logger.info(f"   📂 Dataset ready: {dataset_paths['train_file']}")
+        dataset_path = "backend/data/employee_burnout_form_data_final.csv"
         # B. Retrain Model
         # Map Decision -> Mode
         from backend.domain.enums.enums import TrainingMode
@@ -147,7 +142,7 @@ class LearningWorker:
         # Note: dataset_reference passed as train_file path
         train_result = self.trainer.retrain(
             mode=mode,
-            dataset_reference=dataset_paths['train_file'],
+            dataset_reference=dataset_path,
             settings=settings
         )
         

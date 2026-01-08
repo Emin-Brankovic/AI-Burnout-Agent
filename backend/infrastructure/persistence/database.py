@@ -18,8 +18,8 @@ DATABASE_DIR.mkdir(exist_ok=True)
 # Database URL with absolute path
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
-print(f"📂 Database directory: {DATABASE_DIR}")
-print(f"💾 Database path: {DATABASE_PATH}")
+print(f"Database directory: {DATABASE_DIR}")
+print(f"Database path: {DATABASE_PATH}")
 
 # Create engine
 engine = create_engine(

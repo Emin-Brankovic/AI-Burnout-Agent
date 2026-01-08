@@ -21,10 +21,13 @@ import { Reviews } from './reviews/reviews';
 import { MatSlider, MatSliderThumb } from '@angular/material/slider';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ReviewModal } from './review-modal/review-modal';
+import { DailyLogsEntryComponent } from './daily-logs-entry/daily-logs-entry';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { FormsModule } from '@angular/forms';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   declarations: [
@@ -34,12 +37,14 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     PredictionTable,
     EmployeeForm,
     Reviews,
-    ReviewModal
+    ReviewModal,
+    DailyLogsEntryComponent
   ],
   imports: [
     CommonModule,
     HrRoutingModule,
     ReactiveFormsModule,
+    FormsModule,
     SharedModule,
     MatIconModule,
     MatCardModule,
@@ -55,7 +60,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatDialogModule,
     MatInputModule,
     MatDividerModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatSnackBarModule
   ]
 })
 export class HrModule { }
