@@ -22,21 +22,21 @@ class AgentPolicyHelper:
         """Determines if a prediction needs human-in-the-loop validation."""
         confidence = prediction.confidence_score
         # Determine if we need review based on confidence and type
-        prediction_type = prediction.prediction_type
+        burnout_risk = prediction.burnout_risk
 
-        if confidence is None or prediction_type is None:
+        if confidence is None or burnout_risk is None:
             return True
 
         # Rule 1: CRITICAL risk always needs review
-        if prediction_type.lower() == BurnoutRiskLevel.CRITICAL:
+        if burnout_risk.lower() == BurnoutRiskLevel.CRITICAL:
             return True
 
         # Rule 2: HIGH risk with low confidence (< 0.75)
-        if prediction_type.lower() == BurnoutRiskLevel.HIGH:
+        if burnout_risk.lower() == BurnoutRiskLevel.HIGH:
             return confidence < 0.75
 
         # Rule 3: MEDIUM risk with low confidence (< 0.70)
-        if prediction_type.lower() == BurnoutRiskLevel.MEDIUM:
+        if burnout_risk.lower() == BurnoutRiskLevel.MEDIUM:
             return confidence < 0.70
 
         # Rule 4: General confidence threshold
@@ -77,15 +77,15 @@ class AgentPolicyHelper:
                 except (ValueError, TypeError):
                     burnout_rate = 0.0
 
-                prediction_type = prediction.prediction_type or BurnoutRiskLevel.from_burnout_rate(burnout_rate)
+                burnout_risk = prediction.burnout_risk or BurnoutRiskLevel.from_burnout_rate(burnout_rate)
 
-                if hasattr(prediction_type, 'value'):
-                    prediction_type = prediction_type.value
+                if hasattr(burnout_risk, 'value'):
+                    burnout_risk = burnout_risk.value
 
                 history.append({
                     'date': daily_log.log_date,
                     'rate': burnout_rate,
-                    'level': prediction_type
+                    'level': burnout_risk
                 })
 
         history.sort(key=lambda x: x['date'], reverse=True)

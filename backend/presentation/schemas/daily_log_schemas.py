@@ -89,8 +89,8 @@ class DailyLogResponse(BaseModel):
         }
 class DailyLogWithPredictionResponse(DailyLogResponse):
     """DTO for daily log with associated prediction."""
-    prediction_type: Optional[str] = Field(None, description="Prediction Type")
-    prediction_value: Optional[float] = Field(None, description="Prediction Value")
+    burnout_risk: Optional[str] = Field(None, description="Prediction Type")
+    burnout_rate: Optional[float] = Field(None, description="Prediction Value")
     confidence_score: Optional[float] = Field(None, description="Confidence Score")
 
     class Config:
@@ -100,8 +100,8 @@ class DailyLogWithPredictionResponse(DailyLogResponse):
                 "id": 1,
                 "employee_id": 1,
                 # ... inherit other fields ...
-                "prediction_type": "HIGH",
-                "prediction_value": 0.85,
+                "burnout_risk": "HIGH",
+                "burnout_rate": 0.85,
                 "confidence_score": 0.92
             }
         }

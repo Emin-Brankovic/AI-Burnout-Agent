@@ -144,7 +144,7 @@ class ModelTrainingService(ITrainer):
                             work_stress_level=daily_log.stress_level or 5,
                             workload_intensity=daily_log.workload_intensity or 5,
                             overtime_hours_today=daily_log.overtime_hours_today or 0.0,
-                            burnout_rate=round(float(agent_prediction.prediction_value),2)
+                            burnout_rate=round(float(agent_prediction.burnout_rate),2)
                         )
                         db_samples.append(sample)
                     except (ValueError, TypeError) as e:

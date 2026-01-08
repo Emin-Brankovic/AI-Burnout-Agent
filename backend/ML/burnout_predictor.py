@@ -314,7 +314,7 @@ class BurnoutPredictor(IBurnoutPredictor):
 
         return PredictionResult(
             burnout_rate=predicted_rate,
-            prediction_type=prediction_type,
+            burnout_risk=prediction_type,
             message=message,
             confidence_score=round(final_confidence, 3)
             #confidence_score=round(final_confidence, 3)  # Round to 3 decimal places

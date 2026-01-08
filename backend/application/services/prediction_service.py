@@ -139,13 +139,11 @@ class PredictionService:
             daily_log: DailyLogEntity,
             prediction_result: PredictionResult
     ) -> AgentPredictionEntity:
-        # Get risk level enum and convert to string for prediction_type
-        risk_level_enum = BurnoutRiskLevel.from_burnout_rate(prediction_result.burnout_rate)
         
         entity = AgentPredictionEntity(
             daily_log_id=daily_log.id,
-            prediction_type=prediction_result.prediction_type,  # Use from result
-            prediction_value=str(round(prediction_result.burnout_rate, 4)),  # Store as string with more precision
+            burnout_risk=prediction_result.burnout_risk,  # Use from result
+            burnout_rate=round(prediction_result.burnout_rate,4),  # Store float
             confidence_score=prediction_result.confidence_score,  # Renamed field
             created_at=datetime.utcnow()
         )
@@ -198,22 +196,17 @@ class PredictionService:
         """
         return self.prediction_repository.get_all()
 
-    def get_predictions_by_type(self, prediction_type: str) -> List[AgentPredictionEntity]:
+    def get_predictions_by_type(self, burnout_risk: str) -> List[AgentPredictionEntity]:
         """
         Get all predictions with specific type.
 
         Args:
-            prediction_type: Prediction type (NORMAL, MEDIUM, HIGH, CRITICAL)
+            burnout_risk: Prediction risk type (NORMAL, MEDIUM, HIGH, CRITICAL)
 
         Returns:
             List of predictions with that type
         """
-        all_predictions = self.prediction_repository.get_all()
-
-        return [
-            p for p in all_predictions
-            if p.prediction_type == prediction_type
-        ]
+        return self.prediction_repository.get_by_type(burnout_risk)
 
     # ========== STATISTICS ==========
 
@@ -238,9 +231,9 @@ class PredictionService:
         total_burnout_rate = 0.0
 
         for prediction in all_predictions:
-            prediction_type = prediction.prediction_type or 'UNKNOWN'
-            risk_counts[prediction_type] = risk_counts.get(prediction_type, 0) + 1
-            total_burnout_rate += prediction.prediction_value or 0.0
+            burnout_risk = prediction.burnout_risk or 'UNKNOWN'
+            risk_counts[burnout_risk] = risk_counts.get(burnout_risk, 0) + 1
+            total_burnout_rate += prediction.burnout_rate or 0.0
 
         return {
             "total_predictions": len(all_predictions),

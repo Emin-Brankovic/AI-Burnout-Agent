@@ -102,8 +102,8 @@ class AgentPrediction(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     daily_log_id = Column(Integer, ForeignKey('daily_logs.id'), nullable=False)
-    prediction_type = Column(String(50), nullable=False)
-    prediction_value = Column(Text, nullable=True)
+    burnout_risk = Column(String(50), nullable=False)
+    burnout_rate = Column(Float, nullable=True)
     confidence_score = Column(Float, nullable=True)
     needs_review = Column(Boolean, default=False)
     human_validation = Column(Boolean, nullable=True) #NULL = Not reviewed, True = AI was right, False = AI was wrong

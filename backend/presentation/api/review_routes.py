@@ -22,8 +22,8 @@ def get_pending_reviews(db: Session = Depends(get_db)):
             AgentPredictionResponse(
                 id=entity.id,
                 daily_log_id=entity.daily_log_id,
-                prediction_type=entity.prediction_type,
-                prediction_value=entity.prediction_value,
+                burnout_risk=entity.burnout_risk,
+                burnout_rate=entity.burnout_rate,
                 confidence_score=entity.confidence_score,
                 confidence_percentage=entity.get_confidence_percentage(),
                 created_at=entity.created_at
@@ -50,8 +50,8 @@ def get_review_details(prediction_id: int, db: Session = Depends(get_db)):
             prediction=AgentPredictionResponse(
                 id=prediction.id,
                 daily_log_id=prediction.daily_log_id,
-                prediction_type=prediction.prediction_type,
-                prediction_value=prediction.prediction_value,
+                burnout_risk=prediction.burnout_risk,
+                burnout_rate=prediction.burnout_rate,
                 confidence_score=prediction.confidence_score,
                 confidence_percentage=prediction.get_confidence_percentage(),
                 created_at=prediction.created_at
@@ -103,8 +103,8 @@ async def submit_review(
         return AgentPredictionResponse(
             id=entity.id,
             daily_log_id=entity.daily_log_id,
-            prediction_type=entity.prediction_type,
-            prediction_value=entity.prediction_value,
+            burnout_risk=entity.burnout_risk,
+            burnout_rate=entity.burnout_rate,
             confidence_score=entity.confidence_score,
             confidence_percentage=entity.get_confidence_percentage(),
             created_at=entity.created_at

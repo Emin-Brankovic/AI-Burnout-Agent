@@ -18,9 +18,9 @@
           <td mat-cell *matCellDef="let log" class="text-xs"> {{log.created_at | date:'dd-MM-yyyy'}} </td>
         </ng-container>
 
-        <ng-container matColumnDef="work_hours">
+        <ng-container matColumnDef="hours_worked">
           <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center"> Hours </th>
-          <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.work_hours}}h </td>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.hours_worked}}h </td>
         </ng-container>
 
         <ng-container matColumnDef="risk_level">
@@ -52,6 +52,61 @@
           <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center"> Motivation </th>
           <td mat-cell *matCellDef="let log" class="text-xs text-center"> {{log.motivation}}/10 </td>
         </ng-container>
+
+        <ng-container matColumnDef="burnout_risk">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs"> Risk </th>
+          <td mat-cell *matCellDef="let log">
+          <span
+              class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+              [ngClass]="{
+                'bg-red-100 text-red-700': log.burnout_risk === 'HIGH',
+                'bg-yellow-100 text-yellow-700': log.burnout_risk === 'MEDIUM',
+                'bg-green-100 text-green-700': log.burnout_risk === 'LOW'
+              }"
+            >
+              {{ log.burnout_risk }}
+          </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="burnout_rate">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-right">
+            Burnout %
+          </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-right">
+            {{ log.burnout_rate | percent:'1.0-0' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="overtime">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center">
+            OT
+          </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center">
+            {{ log.overtime_hours }}h
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="hours_slept">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center">
+            Sleep
+          </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center">
+            {{ log.hours_slept }}h
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="workload">
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-xs text-center">
+            Load
+          </th>
+          <td mat-cell *matCellDef="let log" class="text-xs text-center">
+            {{ log.workload }}
+          </td>
+        </ng-container>
+
+
+
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>

@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +8,7 @@ from backend.application.services.training_service import get_training_service
 from backend.infrastructure.persistence.databse_seeder import run_seeder
 from backend.services.new_model import MODEL_PATH
 from backend.infrastructure.persistence.database import init_db, check_database_exists, SessionLocal
-from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker, get_prediction_worker
+from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker
 from backend.application.services.prediction_service import get_prediction_service
 from backend.application.services.email_service import get_email_notification_service
 from backend.presentation.api import (
@@ -146,7 +145,7 @@ async def lifespan(app: FastAPI):
     app_state.prediction_worker.start()
 
     # D. Start Learning Worker (Self-Improvement Loop)
-    from backend.application.services.learning_worker import LearningWorker
+    from backend.web.workers.learning_worker import LearningWorker
     
     # We use the training service as the ITrainer implementation
     app_state.learning_worker = LearningWorker(

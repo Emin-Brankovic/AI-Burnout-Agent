@@ -8,8 +8,8 @@ import { ReviewModal } from '../review-modal/review-modal';
 export interface PendingReview {
     id: number;
     daily_log_id: number;
-    prediction_type: string;
-    prediction_value: number;
+    burnout_risk: string;
+    burnout_rate: number;
     confidence_score: number;
     confidence_percentage: string;
     created_at: string;
@@ -22,7 +22,7 @@ export interface PendingReview {
     styleUrl: './reviews.css',
 })
 export class Reviews implements OnInit, AfterViewInit {
-    displayedColumns: string[] = ['id', 'created_at', 'prediction_type', 'confidence', 'actions'];
+    displayedColumns: string[] = ['id', 'created_at', 'burnout_risk', 'confidence', 'actions'];
     dataSource = new MatTableDataSource<PendingReview>([]);
     isLoading = true;
 
@@ -43,6 +43,7 @@ export class Reviews implements OnInit, AfterViewInit {
         this.http.get<PendingReview[]>('http://localhost:8000/api/reviews/pending').subscribe({
             next: (data) => {
                 this.dataSource.data = data;
+                console.log(data)
                 this.isLoading = false;
                 // Re-assign paginator if data loads after view init
                 if (this.paginator) {

@@ -51,7 +51,7 @@ class ReviewService:
             "prediction": prediction,
             "log_data": daily_log,
             "confidence_score": prediction.confidence_score,
-            "ai_prediction_type": prediction.prediction_type
+            "ai_prediction_type": prediction.burnout_risk
         }
 
     # ========== VALIDATION METHODS ==========
@@ -88,7 +88,7 @@ class ReviewService:
 
         # 4. Handle Defered "Act" Logic
         if is_correct:
-            prediction_type = prediction.prediction_type
+            prediction_type = prediction.burnout_risk
 
             # CASE A: HIGH RISK
             if prediction_type == BurnoutRiskLevel.HIGH:

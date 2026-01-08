@@ -55,18 +55,18 @@ class DashboardService:
 
             if latest_prediction:
                 try:
-                    risk_value = float(latest_prediction.prediction_value) if latest_prediction.prediction_value else 0.0
+                    risk_value = float(latest_prediction.burnout_rate) if latest_prediction.burnout_rate else 0.0
                 except (ValueError, TypeError):
                     risk_value = 0.0
                 
                 risk_score = int(risk_value * 100)
-                emp_status = latest_prediction.prediction_type
+                emp_status = latest_prediction.burnout_risk
                 has_feedback = latest_prediction.human_validation is not None
                 
                 # Calculate trend
                 if prev_prediction:
                     try:
-                        prev_risk_value = float(prev_prediction.prediction_value) if prev_prediction.prediction_value else 0.0
+                        prev_risk_value = float(prev_prediction.burnout_rate) if prev_prediction.burnout_rate else 0.0
                     except (ValueError, TypeError):
                         prev_risk_value = 0.0
                     

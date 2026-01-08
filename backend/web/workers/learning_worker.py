@@ -5,9 +5,9 @@ from datetime import datetime
 
 from backend.domain.enums.enums import TrainingDecision
 from backend.domain.interfaces.trainer_interface import ITrainer
-from backend.application.services.learning_agent_runner import LearningAgentRunner
+from backend.application.agents.learning_agent_runner import LearningAgentRunner
 from backend.application.services.model_registry import ModelRegistry
-from backend.infrastructure.persistence.database import get_db, SessionLocal
+from backend.infrastructure.persistence.database import SessionLocal
 from backend.infrastructure.persistence.repositories.system_settings_repository import SystemSettingsRepository
 from backend.infrastructure.persistence.repositories.model_version_repository import ModelVersionRepository
 from backend.domain.entities.model_version import ModelVersionEntity

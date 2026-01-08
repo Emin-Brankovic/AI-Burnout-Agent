@@ -55,10 +55,10 @@ class AgentPredictionRepository(AgentPredictionRepositoryInterface):
 
         return [agent_prediction_model_to_entity(model) for model in models]
 
-    def get_by_type(self, prediction_type: str) -> List[AgentPredictionEntity]:
+    def get_by_type(self, burnout_risk: str) -> List[AgentPredictionEntity]:
         """Get all predictions of a specific type."""
         models = self.session.query(AgentPrediction).filter(
-            AgentPrediction.prediction_type == prediction_type
+            AgentPrediction.burnout_risk == burnout_risk
         ).order_by(AgentPrediction.created_at.desc()).all()
 
         return [agent_prediction_model_to_entity(model) for model in models]
@@ -79,8 +79,8 @@ class AgentPredictionRepository(AgentPredictionRepositoryInterface):
 
             if model:
                 model.daily_log_id = entity.daily_log_id
-                model.prediction_type = entity.prediction_type
-                model.prediction_value = entity.prediction_value
+                model.burnout_risk = entity.burnout_risk
+                model.burnout_rate = entity.burnout_rate
                 model.confidence_score = entity.confidence_score
                 model.needs_review = entity.needs_review
                 model.human_validation = entity.human_validation

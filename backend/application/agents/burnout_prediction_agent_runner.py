@@ -20,7 +20,7 @@ class PredictionResult:
     daily_log_id: int
     employee_id: int
     burnout_rate: float
-    prediction_type: str
+    burnout_risk: str
     confidence_score: float
     needs_review: bool
     processed_at: datetime
@@ -159,7 +159,7 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
                 daily_log_id=daily_log.id,
                 employee_id=daily_log.employee_id,
                 burnout_rate=prediction.burnout_rate,
-                prediction_type=prediction.prediction_type,
+                burnout_risk=prediction.burnout_risk,
                 confidence_score=prediction.confidence_score,
                 needs_review=needs_review,
                 processed_at=datetime.utcnow(),
@@ -187,7 +187,7 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
             last_alert_sent = employee.last_alert_sent
 
         # Email Type 1: CRITICAL alert - send instantly
-        if prediction.prediction_type == BurnoutRiskLevel.CRITICAL:
+        if prediction.burnout_risk == BurnoutRiskLevel.CRITICAL:
             # Send email instantly without streak logic
             success = await self._notification.send_critical_alert(
                 employee_id=employee_id,
@@ -203,7 +203,7 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
                 print(f"       📧 CRITICAL alert sent instantly")
         
         # Email Type 1b: HIGH alert (sa historijom i streak logikom)
-        elif prediction.prediction_type.lower() == BurnoutRiskLevel.HIGH:
+        elif prediction.burnout_risk.lower() == BurnoutRiskLevel.HIGH:
             if employee:
                 # Increment streak from database
                 employee.high_burnout_streak = streak + 1
@@ -240,7 +240,7 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
             daily_log_id=daily_log.id,
             employee_id=daily_log.employee_id,
             burnout_rate=prediction.burnout_rate,
-            prediction_type=prediction.prediction_type,
+            burnout_risk=prediction.burnout_risk,
             confidence_score=prediction.confidence_score,
             needs_review=needs_review,
             processed_at=datetime.utcnow(),

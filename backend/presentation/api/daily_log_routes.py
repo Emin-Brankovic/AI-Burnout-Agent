@@ -129,7 +129,7 @@ def get_log_and_subsequent(log_id: int, db: Session = Depends(get_db)):
 
         response_list = []
         for item in results:
-            pred_type = item.get("prediction_type")
+            pred_type = item.get("burnout_risk")
             if hasattr(pred_type, "value"):
                 pred_type = pred_type.value
             
@@ -151,19 +151,21 @@ def get_log_and_subsequent(log_id: int, db: Session = Depends(get_db)):
                 # Recalculate or rely on dict if service was fixed.
                 # Since service sent dict without 'burnout_risk' key (it's a method on entity),
                 # we must calc it or mapped it.
-                burnout_risk=calculate_risk_helper(item), 
-                burnout_rate=calculate_rate_helper(item),
                 status=item.get("status"),
                 processed_at=item.get("processed_at"),
-                prediction_type=item["prediction_type"],
-                prediction_value=item["prediction_value"],
+                burnout_risk=item["burnout_risk"],
+                burnout_rate=item["burnout_rate"],
                 confidence_score=item["confidence_score"]
              )
              for item in results
         ]
 
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=traceback.format_exc()
+        )
+
 
 def _calculate_risk_score_from_dict(item: dict) -> int:
     risk_score = 0

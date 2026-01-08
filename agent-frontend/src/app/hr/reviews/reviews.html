@@ -29,11 +29,11 @@
             </ng-container>
 
             <!-- Prediction Type Column -->
-            <ng-container matColumnDef="prediction_type">
+            <ng-container matColumnDef="burnout_risk">
                 <th mat-header-cell *matHeaderCellDef> Predicted Risk </th>
                 <td mat-cell *matCellDef="let element">
-                    <span class="status-badge" [ngClass]="getStatusClass(element.prediction_type)">
-                        {{element.prediction_type}}
+                    <span class="status-badge" [ngClass]="getStatusClass(element.burnout_risk)">
+                        {{element.burnout_risk}}
                     </span>
                 </td>
             </ng-container>

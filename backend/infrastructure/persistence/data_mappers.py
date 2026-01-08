@@ -119,8 +119,8 @@ def agent_prediction_model_to_entity(model: AgentPrediction) -> AgentPredictionE
     return AgentPredictionEntity(
         id=model.id,
         daily_log_id=model.daily_log_id,
-        prediction_type=model.prediction_type,
-        prediction_value=model.prediction_value,
+        burnout_risk=model.burnout_risk,
+        burnout_rate=model.burnout_rate,
         confidence_score=model.confidence_score,
         created_at=model.created_at,
         needs_review=model.needs_review,
@@ -135,8 +135,8 @@ def agent_prediction_entity_to_model(entity: AgentPredictionEntity) -> AgentPred
     return AgentPrediction(
         id=entity.id,
         daily_log_id=entity.daily_log_id,
-        prediction_type=entity.prediction_type,
-        prediction_value=entity.prediction_value,
+        burnout_risk=entity.burnout_risk,
+        burnout_rate=entity.burnout_rate,
         confidence_score=entity.confidence_score,
         created_at=entity.created_at,
         needs_review=entity.needs_review,

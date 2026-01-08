@@ -112,8 +112,8 @@ class DailyLogService(BaseCRUDService[
             log_dict = log.__dict__.copy() # simplistic, better to be explicit or use schema dump
             
             # Adding prediction data
-            log_dict["prediction_type"] = latest_pred.prediction_type if latest_pred else None
-            log_dict["prediction_value"] = latest_pred.prediction_value if latest_pred else None
+            log_dict["burnout_risk"] = latest_pred.burnout_risk if latest_pred else None
+            log_dict["burnout_rate"] = latest_pred.burnout_rate if latest_pred else None
             log_dict["confidence_score"] = latest_pred.confidence_score if latest_pred else None
             
             result.append(log_dict)

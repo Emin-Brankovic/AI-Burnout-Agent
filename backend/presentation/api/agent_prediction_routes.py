@@ -83,8 +83,8 @@ def predict_burnout(
                 "overtime_hours_today": request.overtime_hours_today
             },
             "prediction": {
-                "burnout_rate": prediction_entity.prediction_value,
-                "prediction_type": prediction_entity.prediction_type,
+                "burnout_rate": prediction_entity.burnout_rate,
+                "burnout_risk": prediction_entity.burnout_risk,
                 "confidence_score": prediction_entity.confidence_score,
                 "confidence_percentage": prediction_entity.get_confidence_percentage(),
                 "message": getattr(prediction_entity, 'message', None)
@@ -119,8 +119,8 @@ def create_prediction(
         return AgentPredictionResponse(
             id=entity.id,
             daily_log_id=entity.daily_log_id,
-            prediction_type=entity.prediction_type,
-            prediction_value=entity.prediction_value,
+            burnout_risk=entity.burnout_risk,
+            burnout_rate=entity.burnout_rate,
             confidence_score=entity.confidence_score,
             confidence_percentage=entity.get_confidence_percentage(),
             created_at=entity.created_at
@@ -149,8 +149,8 @@ def get_all_predictions(
             AgentPredictionResponse(
                 id=entity.id,
                 daily_log_id=entity.daily_log_id,
-                prediction_type=entity.prediction_type,
-                prediction_value=entity.prediction_value,
+                burnout_risk=entity.burnout_risk,
+                burnout_rate=entity.burnout_rate,
                 confidence_score=entity.confidence_score,
                 confidence_percentage=entity.get_confidence_percentage(),
                 created_at=entity.created_at
@@ -171,8 +171,8 @@ def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
         return AgentPredictionResponse(
             id=entity.id,
             daily_log_id=entity.daily_log_id,
-            prediction_type=entity.prediction_type,
-            prediction_value=entity.prediction_value,
+            burnout_risk=entity.burnout_risk,
+            burnout_rate=entity.burnout_rate,
             confidence_score=entity.confidence_score,
             confidence_percentage=entity.get_confidence_percentage(),
             created_at=entity.created_at
@@ -192,8 +192,8 @@ def get_predictions_by_daily_log(daily_log_id: int, db: Session = Depends(get_db
             AgentPredictionResponse(
                 id=entity.id,
                 daily_log_id=entity.daily_log_id,
-                prediction_type=entity.prediction_type,
-                prediction_value=entity.prediction_value,
+                burnout_risk=entity.burnout_risk,
+                burnout_rate=entity.burnout_rate,
                 confidence_score=entity.confidence_score,
                 confidence_percentage=entity.get_confidence_percentage(),
                 created_at=entity.created_at
@@ -215,8 +215,8 @@ def get_high_confidence_predictions(daily_log_id: int, db: Session = Depends(get
             AgentPredictionResponse(
                 id=entity.id,
                 daily_log_id=entity.daily_log_id,
-                prediction_type=entity.prediction_type,
-                prediction_value=entity.prediction_value,
+                burnout_risk=entity.burnout_risk,
+                burnout_rate=entity.burnout_rate,
                 confidence_score=entity.confidence_score,
                 confidence_percentage=entity.get_confidence_percentage(),
                 created_at=entity.created_at
@@ -227,19 +227,19 @@ def get_high_confidence_predictions(daily_log_id: int, db: Session = Depends(get
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/type/{prediction_type}", response_model=List[AgentPredictionResponse])
-def get_predictions_by_type(prediction_type: str, db: Session = Depends(get_db)):
+@router.get("/type/{burnout_risk}", response_model=List[AgentPredictionResponse])
+def get_predictions_by_type(burnout_risk: str, db: Session = Depends(get_db)):
     """Get all predictions of a specific type."""
     try:
         service = AgentPredictionService(db)
-        entities = service.get_by_type(prediction_type)
+        entities = service.get_by_type(burnout_risk)
 
         return [
             AgentPredictionResponse(
                 id=entity.id,
                 daily_log_id=entity.daily_log_id,
-                prediction_type=entity.prediction_type,
-                prediction_value=entity.prediction_value,
+                burnout_risk=entity.burnout_risk,
+                burnout_rate=entity.burnout_rate,
                 confidence_score=entity.confidence_score,
                 confidence_percentage=entity.get_confidence_percentage(),
                 created_at=entity.created_at
@@ -264,8 +264,8 @@ def update_prediction(
         return AgentPredictionResponse(
             id=entity.id,
             daily_log_id=entity.daily_log_id,
-            prediction_type=entity.prediction_type,
-            prediction_value=entity.prediction_value,
+            burnout_risk=entity.burnout_risk,
+            burnout_rate=entity.burnout_rate,
             confidence_score=entity.confidence_score,
             confidence_percentage=entity.get_confidence_percentage(),
             created_at=entity.created_at
