@@ -8,10 +8,6 @@
       </div>
       <p class="subtitle">Real-time employee wellness predictions with human-in-the-loop feedback</p>
     </div>
-<!--    <div class="header-actions">-->
-<!--      <mat-icon class="employee-icon">people</mat-icon>-->
-<!--      <span class="employee-count">{{dataSource.length}} employees</span>-->
-<!--    </div>-->
   </div>
 
   <table mat-table [dataSource]="dataSource" class="risk-table">
@@ -59,17 +55,6 @@
       </td>
     </ng-container>
 
-    <!-- Feedback Column -->
-<!--    <ng-container matColumnDef="feedback">-->
-<!--      <th mat-header-cell *matHeaderCellDef>Validation</th>-->
-<!--      <td mat-cell *matCellDef="let element">-->
-<!--        <button mat-stroked-button color="primary" *ngIf="element.feedbackType === 'buttons'"-->
-<!--          size="small">Review</button>-->
-<!--        <span class="feedback-confirmed" *ngIf="element.feedbackType === 'confirmed'">Validated</span>-->
-<!--      </td>-->
-<!--    </ng-container>-->
-
-<!--    &lt;!&ndash; Header and Row Declarations &ndash;&gt;-->
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
   </table>

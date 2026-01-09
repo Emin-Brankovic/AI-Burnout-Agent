@@ -150,15 +150,7 @@ class DailyLogQueueService:
         Returns:
             Number of logs
         """
-        # count = self.db.query(DailyLog).count()
-        #
-        # if hasattr(DailyLog, 'status'):
-        #     count = (
-        #         self.db.query(DailyLog)
-        #         .filter(DailyLog.status == status.value)
-        #         .count()
-        #     )
-        #queued_logs = self.db.query(DailyLog).filter(DailyLog.status == DailyLogStatus.QUEUED.value).all()
+
         return self.db.query(DailyLog).filter(DailyLog.status == status.value).count()
 
     async def get_queue_stats(self) -> dict:

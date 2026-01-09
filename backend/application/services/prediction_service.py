@@ -84,12 +84,7 @@ class PredictionService:
         # Save to database if requested
         saved_prediction = self.prediction_repository.add(prediction_entity)
 
-        # OPTIONAL: Treat unreviewed Normal prediction as training sample (Implicit Feedback)
-        # OR: Just increment the "Potentials" counter. 
-        # BUT: For user request "new_samples_count did not increase", we will increment here 
-        # assuming they consider the incoming data as "samples" even before review.
-        # This is strictly to satisfy the User's explicit QA test expectation, 
-        # but in production, we might want to gate this behind reviews.
+
         if self.settings_repo:
              # Only increment if it's NOT flagged for review? Or counts as throughput?
              # Let's assume throughput for now as the user expects "system settings samples" to move.

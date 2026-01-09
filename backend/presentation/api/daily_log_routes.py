@@ -12,8 +12,6 @@ from backend.presentation.schemas.daily_log_schemas import (
     DailyLogUpdateRequest,
     DailyLogResponse,
     DailyLogWithPredictionResponse,
-    BatchEnqueueRequest,
-    BatchEnqueueResponse,
     GenerateLogsRequest,
     GenerateLogsResponse
 )
@@ -201,23 +199,6 @@ def calculate_rate_helper(item: dict) -> float:
     val = round(score / 8.0, 2)
     return min(val, 1.0)  # Cap at 1.0 just in case logic evolves
 
-
-@router.get("/employee/{employee_id}", response_model=PagedResult[DailyLogResponse] if False else Any) # Actually let's just return list for now or PagedResult? The prompt asks for server side pagination.
-# The dashboard uses: GET /api/dashboard/?page=... which returns { items: [], total: ... }
-# The get_all_daily_logs returns List. It does NOT return total count in the header or body for paged result. 
-# BaseService.get_all returns PagedResult but the route returns List[DailyLogResponse].
-# Wait, look at get_all_daily_logs in routes:
-#         result = service.get_all(search)
-#         return [ ... for entity in result.items ]
-# It returns ONLY the items. So the frontend doesn't know the total count?
-# If so, the frontend MatPaginator won't work correctly (it needs length).
-# Let's look at Dashboard logic again.
-# this.http.get(`http://localhost:8000/api/dashboard/?${params}`).subscribe(... this.totalItems = data.total; ...)
-# So DASHBOARD API returns a special structure.
-# get_all_daily_logs returns a LIST. This means standard get_all_daily_logs api is NOT fully supporting pagination metadata.
-
-# I will create a new endpoint that returns PagedResult structure (items, total, page, page_size) to support the UI requirements properly.
-
 @router.get("/employee/{employee_id}", response_model=dict)
 def get_logs_by_employee(
     employee_id: int, 
@@ -298,67 +279,6 @@ def get_logs_by_date_range(
         ]
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-#ovo treba izbrisati
-@router.post("/batch-enqueue", response_model=BatchEnqueueResponse, status_code=status.HTTP_200_OK)
-def batch_enqueue_for_prediction(
-        request: BatchEnqueueRequest,
-        db: Session = Depends(get_db)
-):
-    """
-    Batch enqueue daily logs for prediction processing.
-    
-    This endpoint:
-    - Selects a random sample of daily logs that are eligible for prediction
-    - Eligible logs are those NOT already in QUEUED or PROCESSING status
-    - Updates their status to QUEUED atomically
-    - Returns the full details of all enqueued logs
-    
-    The operation is atomic - either all logs are enqueued or none are.
-    """
-    try:
-        service = DailyLogService(db)
-        
-        # Perform batch enqueue
-        enqueued_logs, requested_count = service.batch_enqueue_for_prediction(request.batch_size)
-        
-        # Convert entities to response DTOs
-        response_logs = [
-            DailyLogResponse(
-                id=entity.id,
-                employee_id=entity.employee_id,
-                log_date=entity.log_date,
-                hours_worked=entity.hours_worked,
-                hours_slept=entity.hours_slept,
-                daily_personal_time=entity.daily_personal_time,
-                motivation_level=entity.motivation_level,
-                stress_level=entity.stress_level,
-                workload_intensity=entity.workload_intensity,
-                overtime_hours_today=entity.overtime_hours_today,
-                burnout_risk=entity.calculate_burnout_risk(),
-                burnout_rate=entity.calculate_burnout_rate(),
-                status=entity.status.value if hasattr(entity.status, 'value') else entity.status,
-                processed_at=entity.processed_at
-            )
-            for entity in enqueued_logs
-        ]
-        
-        return BatchEnqueueResponse(
-            enqueued_count=len(enqueued_logs),
-            requested_count=requested_count,
-            enqueued_logs=response_logs
-        )
-        
-    except ValueError as e:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
-        db.rollback()
-        tb = traceback.format_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Batch enqueue failed: {tb}"
-        )
 
 
 @router.post("/generate-random", response_model=GenerateLogsResponse, status_code=status.HTTP_201_CREATED)

@@ -10,26 +10,6 @@ import { HttpClient } from '@angular/common/http';
   styleUrl: './employee-form.css',
 })
 export class EmployeeForm implements OnInit {
-  // Use a Signal to manage form state
-  // formState = signal({
-  //   employee: '',
-  //   workHours: 40,
-  //   stressLevel: 5,
-  //   jobSatisfaction: 5,
-  //   productivity: 5,
-  //   sleepHours: 7,
-  //   workLifeBalance: 5
-  // });
-  //
-  // submitCheckIn() {
-  //   console.log('Submitting Wellness Check:', this.formState());
-  //   // Add your API call here
-  // }
-  //
-  // // Helper to update specific signal properties
-  // updateField(field: string, value: any) {
-  //   this.formState.update(state => ({ ...state, [field]: value }));
-  // }
   employees: any;
   @Output() onSubmitSuccess = new EventEmitter<void>();
 

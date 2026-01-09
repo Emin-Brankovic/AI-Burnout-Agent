@@ -12,13 +12,6 @@ class LearningAgentRunner:
     # Constants for decision logic
     FULL_RETRAINING_THRESHOLD = 500  # >= 500
     INCREMENTAL_RETRAINING_THRESHOLD = 50  # >= 50 (arbitrary minimum for incremental, or just > 0?)
-    # NOTE: Prompt says "INCREMENTAL (<500)" implying anything less than 500 but still valid for training.
-    # We will assume if it's not SKIP (implicit min threshold usually applies, but prompt didn't specify min).
-    # Since "evaluate whether retraining is needed based on ... sample threshold reached", 
-    # and default retrain_threshold in entity is now 500, we might need to be careful.
-    # However, to support "INCREMENTAL < 500", the runner must trigger below 500.
-    # Therefore, we treat strict 500 as the dividing line between FULL and INCREMENTAL.
-    # The actual "Trigger" to run AT ALL might be lower, e.g. 50.
     
     def __init__(self, settings_repository: ISystemSettingsRepository):
         self._settings_repo = settings_repository
@@ -43,17 +36,6 @@ class LearningAgentRunner:
                 "current_samples": settings.new_samples_count
             }
 
-        # Logic: 
-        # If user demands "sample threshold reached" (Entity defaults to 500), 
-        # strictly speaking we only trigger at 500. 
-        # BUT the prompt asks for "INCREMENTAL (<500)". 
-        # The only way to get INCREMENTAL is if we ignore the entity's .should_retrain() 
-        # (which checks >= threshold) OR if we interpret "threshold" differently.
-        # Implemented Strategy: 
-        # - Triggers if >= 50 (Minimum useful batch). 
-        # - < 500 -> Incremental
-        # - >= 500 -> Full
-        
         # We verify against a hard minimum to avoid micro-training on 1 sample.
         MIN_SAMPLES_TO_TRAIN = 50 
         

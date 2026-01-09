@@ -64,7 +64,7 @@ class Employee(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
-    email = Column(String(100), nullable=False, unique=True)
+    email = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
     department_id = Column(Integer, ForeignKey('departments.id'), nullable=True)
     job_title = Column(String(100), nullable=True)

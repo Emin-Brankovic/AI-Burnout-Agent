@@ -361,30 +361,7 @@ class ModelTrainingService(ITrainer):
             }
         else:
             raise Exception(f"Training failed: {result.get('error', 'Unknown error')}")
-    #         self,
-    # ) -> EvaluationMetrics:
-    #     """
-    #     Evaluate trained model on validation data.
-    #
-    #     Args:
-    #         validation_samples: Validation data
-    #
-    #     Returns:
-    #         EvaluationMetrics with validation results
-    #     """
-    #     samples = self.load_samples_from_csv()
-    #
-    #     print(f"\n📈 Evaluating model on validation set...")
-    #     print(f"   Validation samples: {len(samples)}")
-    #
-    #     eval_metrics = self.predictor.evaluate(validation_data=samples)
-    #
-    #     print(f"\n✅ Evaluation complete!")
-    #     print(f"   Validation R²: {eval_metrics.test_r2_score:.4f}")
-    #     print(f"   MSE: {eval_metrics.mse:.4f}")
-    #     print(f"   MAE: {eval_metrics.mae:.4f}")
-    #
-    #     return eval_metrics
+
 
     # ========== FULL PIPELINE ==========
 

@@ -119,55 +119,6 @@ class DailyLogService(BaseCRUDService[
             result.append(log_dict)
 
         return result
-# Ovo je legit
-    def batch_enqueue_for_prediction(self, batch_size: int) -> tuple[List[DailyLogEntity], int]:
-        """
-        Batch enqueue daily logs for prediction processing.
-        
-        This method:
-        1. Queries for random eligible logs (not already queued/processing)
-        2. Updates their status to QUEUED atomically
-        3. Returns the enqueued logs
-        
-        Args:
-            batch_size: Number of logs to enqueue
-            
-        Returns:
-            Tuple of (list of enqueued entities, requested count)
-            
-        Raises:
-            ValueError: If batch_size is invalid
-            Exception: If database operation fails
-        """
-        if batch_size <= 0:
-            raise ValueError("batch_size must be greater than 0")
-        
-        try:
-            # Get random eligible logs
-            eligible_logs = self.repository.get_random_eligible_for_prediction(batch_size)
-            
-            if not eligible_logs:
-                # No eligible logs available
-                return [], batch_size
-            
-            # Update status to QUEUED for all selected logs atomically
-            enqueued_logs = []
-            for log in eligible_logs:
-                log.status = DailyLogStatus.QUEUED
-                updated_log = self.repository.update(log)
-                enqueued_logs.append(updated_log)
-            
-            # Commit happens in repository.update, but we're in a transaction context
-            self.session.commit()
-            
-            print(f"✅ Batch enqueued {len(enqueued_logs)} daily logs for prediction")
-            
-            return enqueued_logs, batch_size
-            
-        except Exception as e:
-            self.session.rollback()
-            print(f"Batch enqueue failed: {e}")
-            raise
 
     def generate_random_logs(self, batch_size: int) -> tuple[List[DailyLogEntity], int]:
         """
