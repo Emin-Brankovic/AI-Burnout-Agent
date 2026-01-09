@@ -139,7 +139,8 @@ class DashboardService:
                 "risk_score": emp_data["risk_score"],
                 "status": emp_data["status"],
                 "trend": emp_data["trend"],
-                "has_feedback": emp_data["has_feedback"]
+                "has_feedback": emp_data["has_feedback"],
+                "hire_date": emp_data["employee"].hire_date
             })
 
         import math

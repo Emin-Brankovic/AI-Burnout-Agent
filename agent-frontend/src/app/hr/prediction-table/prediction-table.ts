@@ -77,64 +77,6 @@ export interface EmployeeData {
   feedbackType: string;
 }
 
-const ELEMENT_DATA: EmployeeData[] = [
-  {
-    initial: 'J',
-    name: 'John Smith',
-    role: 'Senior Developer',
-    department: 'Engineering',
-    riskScore: 78,
-    status: 'High Risk',
-    statusClass: 'status-high',
-    trendIcon: 'trending_up',
-    feedbackType: 'buttons'
-  },
-  {
-    initial: 'S',
-    name: 'Sarah Johnson',
-    role: 'Product Manager',
-    department: 'Product',
-    riskScore: 45,
-    status: 'Medium Risk',
-    statusClass: 'status-medium',
-    trendIcon: 'trending_flat',
-    feedbackType: 'confirmed'
-  },
-  {
-    initial: 'M',
-    name: 'Michael Chen',
-    role: 'Data Analyst',
-    department: 'Analytics',
-    riskScore: 23,
-    status: 'Low Risk',
-    statusClass: 'status-low',
-    trendIcon: 'trending_down',
-    feedbackType: 'rejected'
-  },
-  {
-    initial: 'E',
-    name: 'Emily Rodriguez',
-    role: 'UX Designer',
-    department: 'Design',
-    riskScore: 62,
-    status: 'High Risk',
-    statusClass: 'status-high',
-    trendIcon: 'trending_up',
-    feedbackType: 'buttons'
-  },
-  {
-    initial: 'D',
-    name: 'David Kim',
-    role: 'DevOps Engineer',
-    department: 'Engineering',
-    riskScore: 89,
-    status: 'Critical',
-    statusClass: 'status-critical',
-    trendIcon: 'trending_up',
-    feedbackType: 'confirmed'
-  }
-];
-
 
 export interface PredictionRequest {
   daily_personal_time: number;

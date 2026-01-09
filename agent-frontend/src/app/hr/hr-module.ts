@@ -29,6 +29,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { EmployeeDailyLogs } from './employee-daily-logs/employee-daily-logs';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 @NgModule({
   declarations: [
@@ -63,7 +65,9 @@ import { EmployeeDailyLogs } from './employee-daily-logs/employee-daily-logs';
     MatInputModule,
     MatDividerModule,
     MatButtonToggleModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ]
 })
 export class HrModule { }

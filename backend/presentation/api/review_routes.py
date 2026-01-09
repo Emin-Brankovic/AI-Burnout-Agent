@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -125,7 +127,7 @@ async def test_email_service():
     try:
         email_service = get_email_service()
         success = await email_service.send_email(
-            to=["emin.brankovic19@gmail.com"],
+            to=[os.getenv("DEFAULT_RECIPIENT_EMAIL")],
             subject="🚀 Test Email - Burnout Prevention System",
             body_html="""
             <h3>System Test</h3>

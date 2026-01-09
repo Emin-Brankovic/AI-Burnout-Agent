@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -16,6 +18,7 @@ class EmployeeDashboardItem(BaseModel):
     status: str
     trend: str
     has_feedback: bool
+    hire_date: Optional[datetime]
 
 class DashboardResponse(BaseModel):
     summary: DashboardSummary

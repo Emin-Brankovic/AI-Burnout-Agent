@@ -6,7 +6,6 @@ import uvicorn
 
 from backend.application.services.training_service import get_training_service
 from backend.infrastructure.persistence.databse_seeder import run_seeder
-from backend.services.new_model import MODEL_PATH
 from backend.infrastructure.persistence.database import init_db, check_database_exists, SessionLocal
 from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker
 from backend.application.services.prediction_service import get_prediction_service
@@ -43,7 +42,7 @@ app_state = AppState()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
-
+    MODEL_PATH = 'backend/ml_models/burnout_model.pkl'
     print("=" * 80)
     print("BURNOUT DETECTION SYSTEM STARTING")
     print("=" * 80)

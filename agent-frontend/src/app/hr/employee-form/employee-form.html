@@ -24,6 +24,28 @@
         </mat-error>
       </mat-form-field>
 
+      <div class="date-time-container">
+        <mat-form-field appearance="outline" class="flex-grow">
+          <mat-label>Log Date</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="log_date" [max]="maxDate" [min]="minDate">
+          <mat-hint>MM/DD/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          <mat-error *ngIf="metricsForm.get('log_date')?.hasError('required')">
+            Please select a date
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="time-field">
+          <mat-label>Log Time</mat-label>
+          <input matInput type="time" formControlName="log_time">
+          <mat-icon matSuffix>access_time</mat-icon>
+          <mat-error *ngIf="metricsForm.get('log_time')?.hasError('required')">
+            Please select a time
+          </mat-error>
+        </mat-form-field>
+      </div>
+
       <div class="grid-layout">
 
         <div class="metric-item">
@@ -108,8 +130,7 @@
 
       </div>
 
-      <button mat-raised-button color="primary" class="submit-btn"
-              [disabled]="isSubmitting || metricsForm.invalid">
+      <button mat-raised-button color="primary" class="submit-btn" [disabled]="isSubmitting || metricsForm.invalid">
         <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
         <mat-icon *ngIf="!isSubmitting">send</mat-icon>
         {{ isSubmitting ? 'Analyzing...' : 'Submit Wellness Check' }}

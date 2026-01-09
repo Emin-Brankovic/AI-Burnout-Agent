@@ -1,7 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {HttpClient} from '@angular/common/http';
+import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-employee-form',
@@ -35,14 +35,18 @@ export class EmployeeForm implements OnInit {
 
   metricsForm: FormGroup;
   isSubmitting = false;
+  maxDate = new Date();
+  minDate: Date | null = null;
 
   constructor(private fb: FormBuilder, private snackBar: MatSnackBar, private http: HttpClient) {
     this.metricsForm = this.fb.group({
       employee_id: [null, Validators.required],
+      log_date: [new Date(), Validators.required],
+      log_time: [new Date().toTimeString().slice(0, 5), Validators.required],
 
       // Existing fields
       hours_worked: [8, [Validators.required, Validators.min(0), Validators.max(16)]],
-      stress_level: [5, [Validators.required, Validators.min(0), Validators.max(10)]],
+      stress_level: [5, [Validators.required, Validators.min(1), Validators.max(10)]],
       hours_slept: [7, [Validators.required, Validators.min(0), Validators.max(12)]],
 
       // ✅ Newly added fields
@@ -50,6 +54,15 @@ export class EmployeeForm implements OnInit {
       workload_intensity: [5, [Validators.required, Validators.min(1), Validators.max(10)]],
       daily_personal_time: [2, [Validators.required, Validators.min(0)]],
       overtime_hours_today: [0, [Validators.required, Validators.min(0)]],
+    });
+
+    this.metricsForm.get('employee_id')?.valueChanges.subscribe(id => {
+      const employee = this.employees?.find((e: any) => e.id === id);
+      if (employee && employee.hire_date) {
+        this.minDate = new Date(employee.hire_date);
+      } else {
+        this.minDate = null;
+      }
     });
   }
 
@@ -74,10 +87,28 @@ export class EmployeeForm implements OnInit {
   }
 
   async onSubmit() {
-    console.log(this.metricsForm.value)
-    this.http.post(`http://localhost:8000/api/daily-logs/`, this.metricsForm.value).subscribe({
+    const formValue = { ...this.metricsForm.value };
+    const date = new Date(formValue.log_date);
+    const [hours, minutes] = formValue.log_time.split(':');
+    date.setHours(parseInt(hours), parseInt(minutes));
+
+    // Use the combined date-time
+    formValue.log_date = date.toISOString();
+    delete formValue.log_time;
+
+    console.log(formValue)
+    this.http.post(`http://localhost:8000/api/daily-logs/`, formValue).subscribe({
       next: (res: any) => {
         console.log('Employee data loaded:', res);
+        this.snackBar.open(
+          'Daily log submitted successfully',
+          'Close',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top'
+          }
+        );
       },
       error: (error) => {
         console.error('Error loading dashboard data:', error);

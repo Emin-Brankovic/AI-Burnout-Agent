@@ -50,7 +50,6 @@ export class Dashboard implements OnInit, AfterViewInit {
     { value: 'CRITICAL', label: 'Critical' },
     { value: 'HIGH', label: 'High' },
     { value: 'MEDIUM', label: 'Medium' },
-    { value: 'LOW', label: 'Low' },
     { value: 'NORMAL', label: 'Normal' }
   ];
   trends = [
