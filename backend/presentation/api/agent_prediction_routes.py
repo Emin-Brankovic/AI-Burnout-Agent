@@ -8,6 +8,7 @@ from typing import List, Optional
 from backend.application.services.training_service import ModelTrainingService
 from backend.infrastructure.persistence.repositories.daily_log_repository import DailyLogRepository
 from backend.application.services.prediction_service import get_prediction_service
+from backend.application.services.model_registry import ModelRegistry
 from backend.domain.entities.daily_log import DailyLogEntity
 from backend.infrastructure.persistence.database import get_db
 from backend.application.services.agent_prediction_service import AgentPredictionService
@@ -26,6 +27,32 @@ from backend.ML.burnout_predictor import BurnoutPredictor
 router = APIRouter(prefix="/predictions", tags=["Agent Predictions"])
 
 
+@router.get("/model-info", response_model=dict, status_code=status.HTTP_200_OK)
+def get_model_info():
+    """
+    Get information about the currently active ML model.
+    
+    Returns model version, path, and status information.
+    Useful for verifying which model is currently serving predictions.
+    """
+    try:
+        registry = ModelRegistry()
+        model_info = registry.model_info
+        return {
+            "status": "active" if model_info["is_loaded"] else "not_loaded",
+            "model_version": model_info["version"],
+            "model_path": model_info["model_path"],
+            "file_modified_at": model_info["file_mtime"],
+            "auto_reload_enabled": model_info["auto_reload_enabled"],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get model info: {str(e)}"
+        )
+
+
 @router.post("/predict", response_model=dict, status_code=status.HTTP_200_OK)
 def predict_burnout(
     request: DailyLogCreateRequest,
@@ -35,6 +62,7 @@ def predict_burnout(
     Predict burnout risk based on user input without saving daily log.
 
     This endpoint allows direct prediction from user input data.
+    Returns the model_version that made the prediction for traceability.
     """
     try:
         # Create a temporary DailyLogEntity for prediction (not saved to DB)
@@ -70,7 +98,7 @@ def predict_burnout(
 
         db.commit()
 
-        # Return prediction results
+        # Return prediction results with model version
         return {
             "employee_id": request.employee_id,
             "input_data": {
@@ -87,7 +115,8 @@ def predict_burnout(
                 "burnout_risk": prediction_entity.burnout_risk,
                 "confidence_score": prediction_entity.confidence_score,
                 "confidence_percentage": prediction_entity.get_confidence_percentage(),
-                "message": getattr(prediction_entity, 'message', None)
+                "message": getattr(prediction_entity, 'message', None),
+                "model_version": prediction_entity.model_version  # Track which model made this prediction
             },
             "timestamp": datetime.now().isoformat()
         }

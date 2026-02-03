@@ -242,9 +242,11 @@ class ModelTrainingService(ITrainer):
         # Update internal data path to point to the new dataset from Formatter
         self.data_path = Path(dataset_reference)
         
-        # Generate version string
-        version_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        model_name = f"burnout_model_{version_id}"
+        # Generate version string using new format
+        from backend.application.services.model_registry import ModelRegistry
+        registry = ModelRegistry()
+        version_id = registry._generate_version_from_file(self.models_dir / 'burnout_model.pkl')
+        model_name = "burnout_model"
         
         # Run async training synchronously
         log_message = ""
@@ -281,9 +283,11 @@ class ModelTrainingService(ITrainer):
         # Update internal data path to point to the new dataset from Formatter
         self.data_path = Path(dataset_reference)
         
-        # Generate version string
-        version_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        model_name = f"burnout_model_{version_id}"
+        # Generate version string using new format
+        from backend.application.services.model_registry import ModelRegistry
+        registry = ModelRegistry()
+        version_id = registry._generate_version_from_file(self.models_dir / 'burnout_model.pkl')
+        model_name = "burnout_model"
         
         try:
             # Await training directly (no asyncio.run needed)
@@ -347,10 +351,14 @@ class ModelTrainingService(ITrainer):
             version_repo.add(new_version)
             db_session.commit()
 
-            # 6. Hot Swap Model in Registry
+            # 6. Hot Swap Model in Registry with version tracking
             registry = ModelRegistry()
             self.predictor.load_model(result["model_path"])
-            registry.load_new_model(self.predictor)
+            registry.load_new_model(
+                self.predictor,
+                version=result["model_version"],
+                model_path=result["model_path"]
+            )
 
             return {
                 "message": "Training pipeline completed successfully",

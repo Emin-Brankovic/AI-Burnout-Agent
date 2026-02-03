@@ -34,6 +34,7 @@ from backend.infrastructure.persistence.repositories.system_settings_repository 
 class PredictionService:
     """
     Service for making burnout predictions and persisting results.
+    Supports automatic model hot-swapping with version tracking.
     """
 
     def __init__(
@@ -55,13 +56,78 @@ class PredictionService:
         self.registry = ModelRegistry()
         self.settings_repo = settings_repository
 
+        # Configure model factory for automatic hot-swapping
+        self._setup_model_factory()
+
         # Auto-load model if it exists and registry is empty
         if self.model_path.exists() and not self.registry.active_model:
             print(f"✅ Loading initial model from {self.model_path}")
             self.predictor.load_model(str(self.model_path))
-            self.registry.load_new_model(self.predictor)
+            # Load with version tracking
+            self.registry.load_new_model(
+                self.predictor, 
+                model_path=str(self.model_path)
+            )
         elif not self.model_path.exists():
-            print(f"⚠️ Model not found at {self.model_path}.")
+            print(f"⚠️ Model not found at {self.model_path}. Training initial model...")
+            self._train_initial_model()
+
+    def _setup_model_factory(self):
+        """Configure the model factory for hot-swapping."""
+        def create_predictor():
+            """Factory function to create new predictor instances."""
+            return BurnoutPredictor(
+                daily_log_repo=self.daily_log_repository,
+                employee_repo=self.employee_repository
+            )
+        
+        self.registry.set_model_factory(create_predictor)
+
+    def _train_initial_model(self):
+        """
+        Train an initial model when no model file exists.
+        This ensures the system can start even without a pre-trained model.
+        Note: This is a fallback - main.py should handle initial training in async context.
+        """
+        import asyncio
+        from backend.application.services.training_service import ModelTrainingService
+        
+        try:
+            # Create a training service instance
+            training_service = ModelTrainingService(
+                predictor=self.predictor,
+                daily_log_repository=self.daily_log_repository
+            )
+            
+            # Handle both cases: running inside event loop or not
+            try:
+                loop = asyncio.get_running_loop()
+                # We're inside an event loop - create a task and use nest_asyncio or skip
+                # Since we can't easily await here, just log and let main.py handle it
+                print("   ⚠️ Skipping training in PredictionService (will be handled by main.py)")
+                return
+            except RuntimeError:
+                # No running event loop - safe to use asyncio.run()
+                model_path, metrics = asyncio.run(
+                    training_service.train_model(model_name='burnout_model', isRetrain=False)
+                )
+            
+            print(f"✅ Initial model trained successfully!")
+            print(f"   Model saved to: {model_path}")
+            print(f"   Train R²: {metrics.train_r2_score:.4f}")
+            print(f"   Test R²: {metrics.test_r2_score:.4f}")
+            
+            # Load the newly trained model into registry
+            self.predictor.load_model(str(self.model_path))
+            self.registry.load_new_model(
+                self.predictor,
+                model_path=str(self.model_path)
+            )
+            
+        except Exception as e:
+            print(f"❌ Failed to train initial model: {e}")
+            import traceback
+            traceback.print_exc()
 
     # ========== PREDICTION METHODS ==========
 
@@ -71,14 +137,15 @@ class PredictionService:
             save_to_db: bool = True
     ) -> AgentPredictionEntity:
         
-        # Use Registry for atomic thread-safe prediction
+        # Use Registry for atomic thread-safe prediction with version tracking
         # This allows the background worker to hot-swap the model underneath
-        prediction_result = self.registry.predict(daily_log)
+        prediction_result, model_version = self.registry.predict(daily_log)
 
-        # Convert to domain entity
+        # Convert to domain entity with model version
         prediction_entity = self._convert_result_to_entity(
             daily_log=daily_log,
-            prediction_result=prediction_result
+            prediction_result=prediction_result,
+            model_version=model_version
         )
 
         # Save to database if requested
@@ -93,7 +160,7 @@ class PredictionService:
              except Exception as e:
                 print(f"⚠️ Failed to increment system settings samples: {e}")
 
-        print(f"✅ Prediction saved via Registry (ID: {saved_prediction.id})")
+        print(f"✅ Prediction saved via Registry (ID: {saved_prediction.id}, Model: {model_version})")
         return saved_prediction
 
 
@@ -132,7 +199,8 @@ class PredictionService:
     def _convert_result_to_entity(
             self,
             daily_log: DailyLogEntity,
-            prediction_result: PredictionResult
+            prediction_result: PredictionResult,
+            model_version: Optional[str] = None
     ) -> AgentPredictionEntity:
         
         entity = AgentPredictionEntity(
@@ -140,7 +208,8 @@ class PredictionService:
             burnout_risk=prediction_result.burnout_risk,  # Use from result
             burnout_rate=round(prediction_result.burnout_rate,4),  # Store float
             confidence_score=prediction_result.confidence_score,  # Renamed field
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
+            model_version=model_version  # Track which model made this prediction
         )
 
         # Message is not stored in DB but useful for processing

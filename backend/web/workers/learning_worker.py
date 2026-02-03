@@ -162,15 +162,20 @@ class LearningWorker:
         version_repo.add(new_version)
         logger.info(f"   fw Version {new_version.version_number} saved.")
 
-        # D. Hot Swapping
+        # D. Hot Swapping with version tracking
         if self.model_factory:
             try:
                 # Create empty predictor instance
                 new_predictor = self.model_factory()
                 # Load weights
                 new_predictor.load_model(new_version.model_file_path)
-                # Swap
-                model_registry.load_new_model(new_predictor)
+                # Swap with version info
+                model_registry.load_new_model(
+                    new_predictor,
+                    version=new_version.version_number,
+                    model_path=new_version.model_file_path
+                )
+                logger.info(f"   🔥 Hot-swapped to model version: {new_version.version_number}")
             except Exception as e:
                  logger.error(f"   ⚠️ Hot-swap failed: {e}")
                  # Don't fail the whole cycle, model is saved on disk at least

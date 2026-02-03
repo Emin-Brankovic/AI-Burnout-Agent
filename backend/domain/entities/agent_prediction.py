@@ -18,6 +18,7 @@ class AgentPredictionEntity:
     human_validation: Optional[bool] = None
     review_notes: Optional[str] = None
     reviewed_at: Optional[datetime] = None
+    model_version: Optional[str] = None  # Tracks which model version made this prediction
 
     def __post_init__(self):
         """Validate entity after initialization."""

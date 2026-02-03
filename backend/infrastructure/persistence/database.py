@@ -110,6 +110,7 @@ class AgentPrediction(Base):
     review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     reviewed_at = Column(DateTime, nullable=True)
+    model_version = Column(String(50), nullable=True)  # Tracks which model version made this prediction
 
 
     daily_log = relationship("DailyLog", back_populates="agent_predictions")

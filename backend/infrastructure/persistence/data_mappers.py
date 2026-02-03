@@ -126,7 +126,8 @@ def agent_prediction_model_to_entity(model: AgentPrediction) -> AgentPredictionE
         needs_review=model.needs_review,
         human_validation=model.human_validation,
         review_notes=model.review_notes,
-        reviewed_at=model.reviewed_at
+        reviewed_at=model.reviewed_at,
+        model_version=model.model_version
     )
 
 
@@ -142,7 +143,8 @@ def agent_prediction_entity_to_model(entity: AgentPredictionEntity) -> AgentPred
         needs_review=entity.needs_review,
         human_validation=entity.human_validation,
         review_notes=entity.review_notes,
-        reviewed_at=entity.reviewed_at
+        reviewed_at=entity.reviewed_at,
+        model_version=entity.model_version
     )
 
 

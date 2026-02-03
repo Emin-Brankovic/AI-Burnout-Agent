@@ -56,6 +56,25 @@ async def lifespan(app: FastAPI):
         run_seeder()
     
     app_state.training_service = get_training_service()
+    
+    # Train initial model if it doesn't exist
+    if not os.path.exists(MODEL_PATH):
+        print("\n⚠️ No model found. Training initial model...")
+        try:
+            # Since we're already in an async context (lifespan), use await directly
+            model_path, metrics = await app_state.training_service.train_model(
+                model_name='burnout_model', isRetrain=False
+            )
+            print(f"✅ Initial model trained successfully!")
+            print(f"   Model saved to: {model_path}")
+            print(f"   Train R²: {metrics.train_r2_score:.4f}")
+            print(f"   Test R²: {metrics.test_r2_score:.4f}")
+        except Exception as e:
+            print(f"❌ Failed to train initial model: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Load the model (whether it existed or was just trained)
     if os.path.exists(MODEL_PATH):
         app_state.training_service.predictor.load_model(MODEL_PATH)
 
@@ -116,22 +135,30 @@ async def lifespan(app: FastAPI):
         
         pred = BurnoutPredictor(daily_log_repo=d_repo, employee_repo=e_repo)
         
-        # Load weights if available
+        # Load weights if available (model should exist at this point due to startup training)
         if os.path.exists(model_path):
              pred.load_model(model_path)
+        else:
+             print(f"   ⚠️ Model file not found at {model_path}")
              
         return pred
 
     # B. Initialize ModelRegistry with initial model
     from backend.application.services.model_registry import ModelRegistry
     registry = ModelRegistry()
+    registry.set_model_factory(model_factory)  # Enable auto-reload capability
+    
     if not registry.active_model:
         print("   Loading initial model into Registry...")
         try:
             initial_model = model_factory()
-            registry.load_new_model(initial_model)
+            if initial_model.is_model_loaded:
+                registry.load_new_model(initial_model, model_path=MODEL_PATH)
+                print(f"   ✅ Model loaded into registry (version: {registry.current_version})")
+            else:
+                print("   ⚠️ Model factory returned unloaded predictor - no model in registry")
         except Exception as e:
-             print(f"   Failed to load initial model: {e}")
+             print(f"   ❌ Failed to load initial model: {e}")
 
     # C. Start Prediction Worker (Queue Processor)
     from backend.web.workers.burnout_prediction_worker import BurnoutPredictionWorker

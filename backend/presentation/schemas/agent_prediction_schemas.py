@@ -46,6 +46,7 @@ class AgentPredictionResponse(BaseModel):
     confidence_score: Optional[float] = Field(None, description="Confidence score (0-1)")
     confidence_percentage: str = Field(..., description="Confidence as percentage")
     created_at: datetime = Field(..., description="Date prediction was created")
+    model_version: Optional[str] = Field(None, description="Model version that made this prediction")
 
     class Config:
         from_attributes = True
@@ -57,6 +58,7 @@ class AgentPredictionResponse(BaseModel):
                 "burnout_rate": 0.85,
                 "confidence_score": 0.87,
                 "confidence_percentage": "87.0%",
-                "created_at": "2024-01-15T10:30:00"
+                "created_at": "2024-01-15T10:30:00",
+                "model_version": "BurnoutAgentModel v1"
             }
         }
