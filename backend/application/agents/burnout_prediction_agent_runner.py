@@ -114,6 +114,9 @@ class BurnoutPredictionAgentRunner(SoftwareAgent[DailyLogEntity, AgentPrediction
             # High confidence - automatic classification
             self._current_log.status = DailyLogStatus.ANALYZED
             prediction.needs_review=needs_review
+            # Auto-populate human_validation with the model's burnout_rate
+            # so this sample is immediately usable for retraining without HR review
+            prediction.human_validation = prediction.burnout_rate
 
         if prediction.id:
             updated_prediction = self._predictor.prediction_repository.update(prediction)

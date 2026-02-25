@@ -97,6 +97,8 @@ class DailyLogRepository(DailyLogRepositoryInterface):
                 model.stress_level = entity.stress_level
                 model.workload_intensity = entity.workload_intensity
                 model.overtime_hours_today = entity.overtime_hours_today
+                model.status = entity.status.value if hasattr(entity.status, 'value') else entity.status
+                model.processed_at = entity.processed_at
                 self.session.flush()
                 self.session.commit()
                 self._identity_map[entity.id] = entity

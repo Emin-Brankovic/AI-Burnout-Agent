@@ -8,12 +8,19 @@ class ReviewSubmitRequest(BaseModel):
     """DTO for submitting HR review of a prediction."""
     is_correct: bool = Field(..., description="Whether the prediction was correct")
     hr_notes: Optional[str] = Field(None, description="Optional notes from HR")
+    hr_burnout_rate: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="HR-corrected burnout rate (0.0-1.0). Used as gold label for retraining."
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "is_correct": True,
-                "hr_notes": "Confirmed with employee, they are feeling burnt out."
+                "is_correct": False,
+                "hr_notes": "Employee is not burnt out, lowering rate.",
+                "hr_burnout_rate": 0.25
             }
         }
 

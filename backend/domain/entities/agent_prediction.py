@@ -15,7 +15,7 @@ class AgentPredictionEntity:
     id: Optional[int] = None
     created_at: Optional[datetime] = None
     needs_review: bool = False
-    human_validation: Optional[bool] = None
+    human_validation: Optional[float] = None  # HR-corrected burnout rate (gold label for training)
     review_notes: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     model_version: Optional[str] = None  # Tracks which model version made this prediction

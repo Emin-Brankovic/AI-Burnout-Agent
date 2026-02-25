@@ -60,10 +60,19 @@ class ReviewService:
             self,
             prediction_id: int,
             is_correct: bool,
-            hr_notes: Optional[str] = None
+            hr_notes: Optional[str] = None,
+            hr_burnout_rate: Optional[float] = None
     ) -> AgentPredictionEntity:
         """
         Process HR feedback on a specific prediction.
+
+        Args:
+            prediction_id: ID of the prediction to review
+            is_correct: Whether the AI prediction was correct
+            hr_notes: Optional notes from the HR reviewer
+            hr_burnout_rate: Optional HR-corrected burnout rate (0.0-1.0).
+                             When provided, this becomes the gold label for retraining.
+                             When not provided but is_correct=True, uses the model's original burnout_rate.
         """
         # 1. Fetch prediction and associated entities
         prediction = self.prediction_repo.get_by_id(prediction_id)
@@ -77,10 +86,27 @@ class ReviewService:
             raise ValueError(f"Employee for log {daily_log.id} not found.")
 
         # 2. Update Prediction Ground Truth (Mental 'Learn' Phase)
-        prediction.human_validation = is_correct
+        # human_validation stores the HR-corrected burnout rate (gold label)
+        if hr_burnout_rate is not None:
+            # HR explicitly provided a corrected burnout rate
+            prediction.human_validation = round(float(hr_burnout_rate), 4)
+        elif is_correct:
+            # HR confirmed the model prediction is correct → use model's own rate as gold label
+            prediction.human_validation = prediction.burnout_rate
+        else:
+            # HR says prediction is wrong but didn't provide a corrected value
+            # Leave human_validation as None so this sample is skipped during training
+            prediction.human_validation = None
+
         prediction.needs_review = False
         prediction.review_notes = hr_notes
         prediction.reviewed_at = datetime.utcnow()
+
+        # Log which model version produced this prediction (for before/after tracking)
+        if not prediction.model_version:
+            from backend.application.services.model_registry import ModelRegistry
+            registry = ModelRegistry()
+            prediction.model_version = registry.current_version or "unknown"
 
         # 3. Update Daily Log status
         daily_log.status = DailyLogStatus.REVIEWED
@@ -133,8 +159,6 @@ class ReviewService:
         self.employee_repo.update(employee)
         self.log_repo.update(daily_log)
         
-        # 6. Increment Learning Counter (Feedback Loop Connection)
-        self.settings_repo.increment_samples(1)
         
         return self.prediction_repo.update(prediction)
 

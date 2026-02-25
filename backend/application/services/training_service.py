@@ -131,9 +131,23 @@ class ModelTrainingService(ITrainer):
                 )
 
                 
+                skipped_no_validation = 0
+                used_human_label = 0
+                used_model_label = 0
+
                 for daily_log, agent_prediction in analyzed_logs:
 
                     try:
+
+                        if agent_prediction.human_validation is None and agent_prediction.review_notes is not None:
+                            # No human review → skip to avoid training on model's own predictions
+                            skipped_no_validation += 1
+                            continue
+                        else:
+                            # HR provided a corrected burnout rate → gold label
+                            label = round(float(agent_prediction.human_validation), 2)
+                            used_human_label += 1
+
                         # Convert to TrainingSample
                         sample = TrainingSample(
                             employee_id=daily_log.employee_id,
@@ -144,14 +158,16 @@ class ModelTrainingService(ITrainer):
                             work_stress_level=daily_log.stress_level or 5,
                             workload_intensity=daily_log.workload_intensity or 5,
                             overtime_hours_today=daily_log.overtime_hours_today or 0.0,
-                            burnout_rate=round(float(agent_prediction.burnout_rate),2)
+                            burnout_rate=label
                         )
                         db_samples.append(sample)
                     except (ValueError, TypeError) as e:
                         print(f"   Warning: Skipping log {daily_log.id} due to conversion error: {e}")
                         continue
                 
-                print(f"📊 Loaded {len(db_samples)} samples from database (excluding those needing review)")
+                print(f"📊 Loaded {len(db_samples)} samples from database")
+                print(f"   ├─ HR gold-label samples: {used_human_label}")
+                print(f"   └─ Skipped (no human validation): {skipped_no_validation}")
                 
             except Exception as e:
                 print(f"⚠️  Warning: Could not load database samples: {e}")
@@ -351,7 +367,10 @@ class ModelTrainingService(ITrainer):
             version_repo.add(new_version)
             db_session.commit()
 
-            # 6. Hot Swap Model in Registry with version tracking
+            # 6. Update System Settings (reset counters, update last_retrain_at)
+            settings_repo.record_retrain_success()
+
+            # 7. Hot Swap Model in Registry with version tracking
             registry = ModelRegistry()
             self.predictor.load_model(result["model_path"])
             registry.load_new_model(

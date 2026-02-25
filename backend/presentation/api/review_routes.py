@@ -97,7 +97,8 @@ async def submit_review(
         entity = await service.submit_review(
             prediction_id=prediction_id,
             is_correct=request.is_correct,
-            hr_notes=request.hr_notes
+            hr_notes=request.hr_notes,
+            hr_burnout_rate=request.hr_burnout_rate
         )
         
         db.commit()

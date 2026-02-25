@@ -106,7 +106,7 @@ class AgentPrediction(Base):
     burnout_rate = Column(Float, nullable=True)
     confidence_score = Column(Float, nullable=True)
     needs_review = Column(Boolean, default=False)
-    human_validation = Column(Boolean, nullable=True) #NULL = Not reviewed, True = AI was right, False = AI was wrong
+    human_validation = Column(Float, nullable=True)  # NULL = Not reviewed, Float = HR-corrected burnout rate (gold label)
     review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     reviewed_at = Column(DateTime, nullable=True)
